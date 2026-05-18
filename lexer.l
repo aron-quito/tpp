@@ -5,14 +5,25 @@
     #include <string.h> /* Necesario para strdup */
 %}
 
+/* Activar el conteo automático de líneas. ¡Muy útil para reportar errores! */
+%option yylineno
+%option noyywrap
+
 /* Definiciones regulares para mantener el código limpio */
 DIGITO [0-9]
 LETRA  [a-zA-Z]
 
 %%
 
+    /* 0. IGNORAR COMENTARIOS (Deben ir primero para que no choquen con la división '/') */
+\/\/.* { /* Ignorar comentarios de una línea */ }
+
     /* 1. PALABRAS RESERVADAS EN ESPAÑOL */
-    /* Importante: Deben ir antes de la regla de los identificadores (ID) */
+"fun"                { return FUN; }
+"depende"            { return DEPENDE; }
+"otros"              { return OTROS; }
+"retornar"           { return RETORNAR; }
+"leer"               { return LEER; }
 "si"                 { return SI; }
 "sino"               { return SINO; }
 "mientras"           { return MIENTRAS; }
@@ -21,15 +32,17 @@ LETRA  [a-zA-Z]
 "entero"             { return TIPO_ENTERO; }
 "decimal"            { return TIPO_DECIMAL; }
 
-    /* 2. NÚMEROS (Separando enteros de decimales para mayor control) */
+    /* 2. NÚMEROS */
 {DIGITO}+            { yylval.num_entero = atoi(yytext); return NUM_ENTERO; }
 {DIGITO}+"."{DIGITO}+ { yylval.num_decimal = atof(yytext); return NUM_DECIMAL; }
 
+    /* 3. CADENAS DE TEXTO (Permite secuencias de escape como \n) */
+\"([^\\\"]|\\.)*\"   { yylval.cadena = strdup(yytext); return CADENA_TEXTO; }
 
-    /* 3. IDENTIFICADORES (Variables, funciones) */
+    /* 4. IDENTIFICADORES (Variables, funciones) */
 {LETRA}({LETRA}|{DIGITO})* { yylval.cadena = strdup(yytext); return ID; }
 
-    /* 4. OPERADORES ARITMÉTICOS Y DE ASIGNACIÓN */
+    /* 5. OPERADORES ARITMÉTICOS Y DE ASIGNACIÓN */
 "+"                  { return MAS; }
 "-"                  { return MENOS; }
 "*"                  { return MULT; }
@@ -37,57 +50,32 @@ LETRA  [a-zA-Z]
 "%"                  { return MOD; }
 "="                  { return ASIG; }
 
-    /* 5. OPERADORES RELACIONALES (Nuevos para los ciclos y condicionales) */
+    /* 6. OPERADORES RELACIONALES Y PUNTEROS */
 "=="                 { return IGUAL_QUE; }
 "<"                  { return MENOR_QUE; }
 ">"                  { return MAYOR_QUE; }
 "<="                 { return MENOR_IGUAL; }
 ">="                 { return MAYOR_IGUAL; }
 "!="                 { return DIFERENTE; }
+"->"                 { return FLECHA; }
 
-    /* 6. SÍMBOLOS DE AGRUPACIÓN Y CONTROL */
+    /* 7. SÍMBOLOS DE AGRUPACIÓN Y PUNTUACIÓN */
 "("                  { return PARI; }
 ")"                  { return PARD; }
 "{"                  { return LLAVEI; }
 "}"                  { return LLAVED; }
 ";"                  { return PCOMA; }
+","                  { return COMA; }
+":"                  { return DOS_PUNTOS; }
 
-    /* 7. MANEJO DE ESPACIOS Y ERRORES */
-[ \t\r]+             { /* Ignorar espacios, tabulaciones y retornos de carro */ }
-"\n"                 { return '\n'; /* Útil si quieres que los saltos de línea marquen el fin de una instrucción como en Python */ }
-.                    { printf("Error Léxico: Caracter inválido '%s'\n", yytext); }
+    /* 8. MANEJO DE ESPACIOS Y ERRORES */
+[ \t\r\n]+           { /* Ignorar espacios, tabulaciones y saltos de línea. yylineno ya cuenta los \n */ }
+.                    { printf("Error Léxico en la línea %d: Caracter inválido '%s'\n", yylineno, yytext); }
 
 %%
 
-int yywrap() {
-    return 1;
-}
-
-//////////////////////////////////////////////
-
-fun calcular()(
-
-)
-
-entero num1;
-entero num2;
-entero op;
-entero res;
-
-imprimir("Introduce numero 1: ");
-leer(num1);
-imprimir("Introduce numero 2: ");
-leer(num2);
-imprimir("Que operacion deseas hacer: ");
-imprimir("1. +");
-imprimir("2. -");
-imprimir("3. *");
-imprimir("4. /");
-leer(op)
-
-calcular(num1, num2, op, res);
-
-imprimir(res);
-
-// impresion de valores dentro un string
-// salto de linea en imprimir
+/* Si usas %option noyywrap arriba, ya no necesitas definir yywrap a mano, 
+   pero puedes dejarlo así si prefieres no usar la opción. */
+// int yywrap() {
+//     return 1;
+// }
