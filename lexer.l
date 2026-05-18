@@ -3,6 +3,14 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h> /* Necesario para strdup */
+
+    // Variable global para contar la columna actual
+    int columna = 1;
+
+    /* Se ejecuta ANTES de procesar cualquier regla.
+     * Sumamos el largo del token actual (yyleng) a la columna.
+     */
+    #define YY_USER_ACTION columna += yyleng;
 %}
 
 /* Activar el conteo automático de líneas. ¡Muy útil para reportar errores! */
@@ -37,7 +45,7 @@ LETRA  [a-zA-Z]
 {DIGITO}+"."{DIGITO}+ { yylval.num_decimal = atof(yytext); return NUM_DECIMAL; }
 
     /* 3. CADENAS DE TEXTO (Permite secuencias de escape como \n) */
-\"([^\\\"]|\\.)*\"   { yylval.cadena = strdup(yytext); return CADENA_TEXTO; }
+\"([^\\\"]|\\.)*\"   { yylval.cadena = strdup(yytext); return CADENA; }
 
     /* 4. IDENTIFICADORES (Variables, funciones) */
 {LETRA}({LETRA}|{DIGITO})* { yylval.cadena = strdup(yytext); return ID; }
@@ -51,9 +59,9 @@ LETRA  [a-zA-Z]
 "="                  { return ASIG; }
 
     /* 6. OPERADORES RELACIONALES Y PUNTEROS */
-"=="                 { return IGUAL_QUE; }
-"<"                  { return MENOR_QUE; }
-">"                  { return MAYOR_QUE; }
+"=="                 { return IGUAL; }
+"<"                  { return MENOR; }
+">"                  { return MAYOR; }
 "<="                 { return MENOR_IGUAL; }
 ">="                 { return MAYOR_IGUAL; }
 "!="                 { return DIFERENTE; }
@@ -64,18 +72,13 @@ LETRA  [a-zA-Z]
 ")"                  { return PARD; }
 "{"                  { return LLAVEI; }
 "}"                  { return LLAVED; }
-";"                  { return PCOMA; }
+";"                  { return PUNTOCOMA; }
 ","                  { return COMA; }
 ":"                  { return DOS_PUNTOS; }
 
     /* 8. MANEJO DE ESPACIOS Y ERRORES */
-[ \t\r\n]+           { /* Ignorar espacios, tabulaciones y saltos de línea. yylineno ya cuenta los \n */ }
-.                    { printf("Error Léxico en la línea %d: Caracter inválido '%s'\n", yylineno, yytext); }
+[ \t\r]+             { /* Ignorar espacios y tabulaciones (YY_USER_ACTION ya sumó las columnas) */ }
+\n                   { columna = 1; /* Resetear la columna al cambiar de línea */ }
+.                    { printf("Error Léxico en la línea %d, columna %d: Carácter inválido '%s'\n", yylineno, columna - (int)yyleng, yytext); }
 
 %%
-
-/* Si usas %option noyywrap arriba, ya no necesitas definir yywrap a mano, 
-   pero puedes dejarlo así si prefieres no usar la opción. */
-// int yywrap() {
-//     return 1;
-// }
