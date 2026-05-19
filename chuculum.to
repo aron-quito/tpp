@@ -1,0 +1,10 @@
+fun sexito(entero veces, entero meses){
+	entero total;
+    total = veces * meses;
+    imprimir("sexitos totales: ", total);
+}
+
+entero veces, meses;
+leer(veces);
+leer(meses);
+sexito(veces, meses);

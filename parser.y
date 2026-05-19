@@ -137,6 +137,7 @@ bloque_instrucciones:
 instruccion:
     declaracion_var PUNTOCOMA                      { $$ = $1; }
     | ID ASIG expresion PUNTOCOMA                  { $$ = nuevo_nodo_asignacion($1, $3); free($1); }
+    | llamada_funcion PUNTOCOMA                    { $$ = $1; }
     | IMPRIMIR PARI lista_impresion PARD PUNTOCOMA { $$ = nuevo_nodo_imprimir($3); }
     | LEER PARI ID PARD PUNTOCOMA                  { $$ = nuevo_nodo_leer($3); free($3); }
     | RETORNAR expresion PUNTOCOMA                 { $$ = nuevo_nodo_retornar($2); }

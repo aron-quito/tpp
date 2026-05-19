@@ -10,6 +10,8 @@ static int en_imprimir = 0;
 static int en_for_init = 0;
 static int en_for_paso = 0;
 
+static int nivel_expresion = 0;
+
 static void escribir_espaciado() {
     for (int i = 0; i < espaciado; i++) {
         fprintf(out, "    ");
@@ -34,6 +36,7 @@ static void visitar_nodo_c(NodoAST *nodo) {
             break;
         case N_OPERACION:
             fprintf(out, "(");
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
             switch (nodo->operador) {
                 case MAS: fprintf(out, " + "); break;
@@ -49,12 +52,15 @@ static void visitar_nodo_c(NodoAST *nodo) {
                 case DIFERENTE: fprintf(out, " != "); break;
             }
             visitar_nodo_c(nodo->der);
+            nivel_expresion--;
             fprintf(out, ")");
             break;
         case N_ASIGNACION:
             if (!en_for_init && !en_for_paso) escribir_espaciado();
             fprintf(out, "%s = ", nodo->nombre_var);
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
+            nivel_expresion--;
             if (!en_for_init && !en_for_paso) fprintf(out, ";\n");
             break;
         case N_DECLARACION_VAR: {
@@ -72,7 +78,9 @@ static void visitar_nodo_c(NodoAST *nodo) {
                 } else if (lista_ids->tipo == N_ASIGNACION) {
                     // Especial: variables con asignación en la misma línea
                     fprintf(out, "%s = ", lista_ids->nombre_var);
+                    nivel_expresion++;
                     visitar_nodo_c(lista_ids->izq);
+                    nivel_expresion--;
                     break;
                 } else if (lista_ids->tipo == N_VARIABLE) {
                     fprintf(out, "%s", lista_ids->nombre_var);
@@ -88,18 +96,24 @@ static void visitar_nodo_c(NodoAST *nodo) {
             escribir_espaciado();
             fprintf(out, "std::cout << ");
             en_imprimir = 1;
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
+            nivel_expresion--;
             en_imprimir = 0;
             fprintf(out, ";\n");
             break;
         case N_LISTA_ARGUMENTOS:
             if (nodo->izq) {
+                nivel_expresion++;
                 visitar_nodo_c(nodo->izq);
+                nivel_expresion--;
                 if (en_imprimir) fprintf(out, " << ");
                 else fprintf(out, ", ");
             }
             if (nodo->der) {
+                nivel_expresion++;
                 visitar_nodo_c(nodo->der);
+                nivel_expresion--;
             }
             break;
         case N_LEER:
@@ -109,13 +123,17 @@ static void visitar_nodo_c(NodoAST *nodo) {
         case N_RETORNAR:
             escribir_espaciado();
             fprintf(out, "return ");
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
+            nivel_expresion--;
             fprintf(out, ";\n");
             break;
         case N_SI:
             escribir_espaciado();
             fprintf(out, "if (");
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
+            nivel_expresion--;
             fprintf(out, ") {\n");
             espaciado++;
             visitar_nodo_c(nodo->der);
@@ -135,7 +153,9 @@ static void visitar_nodo_c(NodoAST *nodo) {
         case N_MIENTRAS:
             escribir_espaciado();
             fprintf(out, "while (");
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
+            nivel_expresion--;
             fprintf(out, ") {\n");
             espaciado++;
             visitar_nodo_c(nodo->der);
@@ -147,13 +167,19 @@ static void visitar_nodo_c(NodoAST *nodo) {
             escribir_espaciado();
             fprintf(out, "for (");
             en_for_init = 1;
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq); // init
+            nivel_expresion--;
             en_for_init = 0;
             fprintf(out, "; ");
+            nivel_expresion++;
             visitar_nodo_c(nodo->der); // condicion
+            nivel_expresion--;
             fprintf(out, "; ");
             en_for_paso = 1;
+            nivel_expresion++;
             visitar_nodo_c(nodo->centro); // paso
+            nivel_expresion--;
             en_for_paso = 0;
             fprintf(out, ") {\n");
             espaciado++;
@@ -165,7 +191,9 @@ static void visitar_nodo_c(NodoAST *nodo) {
         case N_DEPENDE:
             escribir_espaciado();
             fprintf(out, "switch (");
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
+            nivel_expresion--;
             fprintf(out, ") {\n");
             espaciado++;
             visitar_nodo_c(nodo->der);
@@ -177,7 +205,9 @@ static void visitar_nodo_c(NodoAST *nodo) {
             escribir_espaciado();
             if (nodo->izq) {
                 fprintf(out, "case ");
+                nivel_expresion++;
                 visitar_nodo_c(nodo->izq);
+                nivel_expresion--;
                 fprintf(out, ":\n");
             } else {
                 fprintf(out, "default:\n");
@@ -189,9 +219,13 @@ static void visitar_nodo_c(NodoAST *nodo) {
             espaciado--;
             break;
         case N_LLAMADA_FUNCION:
+            if (nivel_expresion == 0) escribir_espaciado();
             fprintf(out, "%s(", nodo->nombre_var);
+            nivel_expresion++;
             visitar_nodo_c(nodo->izq);
+            nivel_expresion--;
             fprintf(out, ")");
+            if (nivel_expresion == 0) fprintf(out, ";\n");
             break;
         case N_DECLARACION_FUN:
             escribir_espaciado();
