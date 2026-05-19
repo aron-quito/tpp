@@ -154,6 +154,10 @@
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h"
+    #include "semantic.h"
+    #include "codegen.h"
+    
+    char nombre_base[256];
 
     extern FILE *yyin;
     extern int yylineno;
@@ -184,7 +188,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 17 "parser.y"
+#line 21 "parser.y"
 {
     int num_entero;
     double num_decimal;
@@ -192,7 +196,7 @@ typedef union YYSTYPE
     struct NodoAST* nodo; /* Puntero para todos nuestros nodos del AST */
 }
 /* Line 193 of yacc.c.  */
-#line 196 "parser.tab.c"
+#line 200 "parser.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -205,7 +209,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 209 "parser.tab.c"
+#line 213 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -520,13 +524,13 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    59,    59,    71,    72,    76,    77,    82,    86,    93,
-      94,    98,    99,   103,   107,   108,   112,   116,   117,   122,
-     123,   127,   128,   129,   130,   131,   132,   133,   134,   135,
-     140,   143,   149,   155,   165,   171,   172,   176,   179,   185,
-     186,   187,   192,   193,   197,   198,   203,   204,   205,   206,
-     207,   208,   209,   210,   211,   212,   213,   214,   215,   216,
-     217,   218,   222,   226,   227,   231,   232
+       0,    63,    63,    82,    83,    87,    88,    93,    97,   104,
+     105,   109,   110,   114,   118,   119,   123,   127,   128,   133,
+     134,   138,   139,   140,   141,   142,   143,   144,   145,   146,
+     151,   154,   160,   166,   176,   182,   183,   187,   190,   196,
+     197,   198,   203,   204,   208,   209,   214,   215,   216,   217,
+     218,   219,   220,   221,   222,   223,   224,   225,   226,   227,
+     228,   229,   233,   237,   238,   242,   243
 };
 #endif
 
@@ -1559,40 +1563,47 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 59 "parser.y"
+#line 63 "parser.y"
     { 
         NodoAST* raiz = nuevo_nodo_programa((yyvsp[(1) - (1)].nodo));
         printf("\n¡Análisis sintáctico exitoso! El código es válido.\n\n"); 
         printf("======================= ÁRBOL SINTÁCTICO ABSTRACTO (AST) =======================\n");
         imprimir_ast(raiz, 0);
         printf("================================================================================\n\n");
+        
+        if (analizar_semantica(raiz)) {
+            char archivo_cpp[256];
+            snprintf(archivo_cpp, sizeof(archivo_cpp), "%s.cpp", nombre_base);
+            generar_codigo_c(raiz, archivo_cpp, nombre_base);
+        }
+        
         liberar_ast(raiz);
         (yyval.nodo) = NULL;
     ;}
     break;
 
   case 3:
-#line 71 "parser.y"
+#line 82 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 4:
-#line 72 "parser.y"
+#line 83 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 5:
-#line 76 "parser.y"
+#line 87 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 6:
-#line 77 "parser.y"
+#line 88 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 7:
-#line 82 "parser.y"
+#line 93 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_declaracion_fun((yyvsp[(2) - (10)].cadena), (yyvsp[(7) - (10)].num_entero), (yyvsp[(4) - (10)].nodo), (yyvsp[(9) - (10)].nodo));
         free((yyvsp[(2) - (10)].cadena));
@@ -1600,7 +1611,7 @@ yyreduce:
     break;
 
   case 8:
-#line 86 "parser.y"
+#line 97 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_declaracion_fun((yyvsp[(2) - (8)].cadena), 0, (yyvsp[(4) - (8)].nodo), (yyvsp[(7) - (8)].nodo));
         free((yyvsp[(2) - (8)].cadena));
@@ -1608,133 +1619,133 @@ yyreduce:
     break;
 
   case 9:
-#line 93 "parser.y"
+#line 104 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 10:
-#line 94 "parser.y"
+#line 105 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 11:
-#line 98 "parser.y"
+#line 109 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_parametros((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 12:
-#line 99 "parser.y"
+#line 110 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 13:
-#line 103 "parser.y"
+#line 114 "parser.y"
     { (yyval.nodo) = nuevo_nodo_parametro((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].cadena)); free((yyvsp[(2) - (2)].cadena)); ;}
     break;
 
   case 14:
-#line 107 "parser.y"
+#line 118 "parser.y"
     { (yyval.num_entero) = TIPO_ENTERO; ;}
     break;
 
   case 15:
-#line 108 "parser.y"
+#line 119 "parser.y"
     { (yyval.num_entero) = TIPO_DECIMAL; ;}
     break;
 
   case 16:
-#line 112 "parser.y"
+#line 123 "parser.y"
     { (yyval.nodo) = nuevo_nodo_declaracion_var((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 17:
-#line 116 "parser.y"
+#line 127 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_ids((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].cadena)); free((yyvsp[(3) - (3)].cadena)); ;}
     break;
 
   case 18:
-#line 117 "parser.y"
+#line 128 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_ids(NULL, (yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 19:
-#line 122 "parser.y"
+#line 133 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 20:
-#line 123 "parser.y"
+#line 134 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 21:
-#line 127 "parser.y"
+#line 138 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (2)].nodo); ;}
     break;
 
   case 22:
-#line 128 "parser.y"
+#line 139 "parser.y"
     { (yyval.nodo) = nuevo_nodo_asignacion((yyvsp[(1) - (4)].cadena), (yyvsp[(3) - (4)].nodo)); free((yyvsp[(1) - (4)].cadena)); ;}
     break;
 
   case 23:
-#line 129 "parser.y"
+#line 140 "parser.y"
     { (yyval.nodo) = nuevo_nodo_imprimir((yyvsp[(3) - (5)].nodo)); ;}
     break;
 
   case 24:
-#line 130 "parser.y"
+#line 141 "parser.y"
     { (yyval.nodo) = nuevo_nodo_leer((yyvsp[(3) - (5)].cadena)); free((yyvsp[(3) - (5)].cadena)); ;}
     break;
 
   case 25:
-#line 131 "parser.y"
+#line 142 "parser.y"
     { (yyval.nodo) = nuevo_nodo_retornar((yyvsp[(2) - (3)].nodo)); ;}
     break;
 
   case 26:
-#line 132 "parser.y"
+#line 143 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 27:
-#line 133 "parser.y"
+#line 144 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 28:
-#line 134 "parser.y"
+#line 145 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 29:
-#line 135 "parser.y"
+#line 146 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 30:
-#line 140 "parser.y"
+#line 151 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_si((yyvsp[(3) - (7)].nodo), (yyvsp[(6) - (7)].nodo), NULL);
     ;}
     break;
 
   case 31:
-#line 143 "parser.y"
+#line 154 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_si((yyvsp[(3) - (11)].nodo), (yyvsp[(6) - (11)].nodo), (yyvsp[(10) - (11)].nodo));
     ;}
     break;
 
   case 32:
-#line 149 "parser.y"
+#line 160 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_mientras((yyvsp[(3) - (7)].nodo), (yyvsp[(6) - (7)].nodo));
     ;}
     break;
 
   case 33:
-#line 155 "parser.y"
+#line 166 "parser.y"
     {
         NodoAST* init = nuevo_nodo_declaracion_var((yyvsp[(3) - (16)].num_entero), nuevo_nodo_asignacion((yyvsp[(4) - (16)].cadena), (yyvsp[(6) - (16)].nodo)));
         NodoAST* paso = nuevo_nodo_asignacion((yyvsp[(10) - (16)].cadena), (yyvsp[(12) - (16)].nodo));
@@ -1745,179 +1756,179 @@ yyreduce:
     break;
 
   case 34:
-#line 165 "parser.y"
+#line 176 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_depende((yyvsp[(2) - (5)].nodo), (yyvsp[(4) - (5)].nodo));
     ;}
     break;
 
   case 35:
-#line 171 "parser.y"
+#line 182 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_casos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 36:
-#line 172 "parser.y"
+#line 183 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 37:
-#line 176 "parser.y"
+#line 187 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_caso((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo));
     ;}
     break;
 
   case 38:
-#line 179 "parser.y"
+#line 190 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_caso(NULL, (yyvsp[(3) - (3)].nodo));
     ;}
     break;
 
   case 39:
-#line 185 "parser.y"
+#line 196 "parser.y"
     { (yyval.nodo) = nuevo_nodo_entero((yyvsp[(1) - (1)].num_entero)); ;}
     break;
 
   case 40:
-#line 186 "parser.y"
+#line 197 "parser.y"
     { (yyval.nodo) = nuevo_nodo_decimal((yyvsp[(1) - (1)].num_decimal)); ;}
     break;
 
   case 41:
-#line 187 "parser.y"
+#line 198 "parser.y"
     { (yyval.nodo) = nuevo_nodo_cadena((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 42:
-#line 192 "parser.y"
+#line 203 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 43:
-#line 193 "parser.y"
+#line 204 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 44:
-#line 197 "parser.y"
+#line 208 "parser.y"
     { (yyval.nodo) = nuevo_nodo_cadena((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 45:
-#line 198 "parser.y"
+#line 209 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 46:
-#line 203 "parser.y"
+#line 214 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAS, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 47:
-#line 204 "parser.y"
+#line 215 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOS, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 48:
-#line 205 "parser.y"
+#line 216 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MULT, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 49:
-#line 206 "parser.y"
+#line 217 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(DIV, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 50:
-#line 207 "parser.y"
+#line 218 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MOD, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 51:
-#line 208 "parser.y"
+#line 219 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAYOR, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 52:
-#line 209 "parser.y"
+#line 220 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOR, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 53:
-#line 210 "parser.y"
+#line 221 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAYOR_IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 54:
-#line 211 "parser.y"
+#line 222 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOR_IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 55:
-#line 212 "parser.y"
+#line 223 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 56:
-#line 213 "parser.y"
+#line 224 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(DIFERENTE, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 57:
-#line 214 "parser.y"
+#line 225 "parser.y"
     { (yyval.nodo) = (yyvsp[(2) - (3)].nodo); ;}
     break;
 
   case 58:
-#line 215 "parser.y"
+#line 226 "parser.y"
     { (yyval.nodo) = nuevo_nodo_variable((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 59:
-#line 216 "parser.y"
+#line 227 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 60:
-#line 217 "parser.y"
+#line 228 "parser.y"
     { (yyval.nodo) = nuevo_nodo_entero((yyvsp[(1) - (1)].num_entero)); ;}
     break;
 
   case 61:
-#line 218 "parser.y"
+#line 229 "parser.y"
     { (yyval.nodo) = nuevo_nodo_decimal((yyvsp[(1) - (1)].num_decimal)); ;}
     break;
 
   case 62:
-#line 222 "parser.y"
+#line 233 "parser.y"
     { (yyval.nodo) = nuevo_nodo_llamada_funcion((yyvsp[(1) - (4)].cadena), (yyvsp[(3) - (4)].nodo)); free((yyvsp[(1) - (4)].cadena)); ;}
     break;
 
   case 63:
-#line 226 "parser.y"
+#line 237 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 64:
-#line 227 "parser.y"
+#line 238 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 65:
-#line 231 "parser.y"
+#line 242 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos(NULL, (yyvsp[(1) - (1)].nodo)); ;}
     break;
 
   case 66:
-#line 232 "parser.y"
+#line 243 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 1921 "parser.tab.c"
+#line 1932 "parser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2131,7 +2142,7 @@ yyreturn:
 }
 
 
-#line 235 "parser.y"
+#line 246 "parser.y"
 
 
 /* 7. REPORTE DE ERRORES DINÁMICO */
@@ -2154,6 +2165,14 @@ int main(int argc, char **argv) {
     if (argc < 2) {
         printf("Error: Falta el archivo de entrada.\nUso: %s <archivo.to>\n", argv[0]);
         return 1;
+    }
+
+    // Extraer el nombre base sin extensión
+    strncpy(nombre_base, argv[1], sizeof(nombre_base) - 1);
+    nombre_base[sizeof(nombre_base) - 1] = '\0';
+    char *dot = strrchr(nombre_base, '.');
+    if (dot) {
+        *dot = '\0';
     }
 
     FILE *archivo = fopen(argv[1], "r");

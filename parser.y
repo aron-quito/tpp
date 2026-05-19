@@ -3,6 +3,10 @@
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h"
+    #include "semantic.h"
+    #include "codegen.h"
+    
+    char nombre_base[256];
 
     extern FILE *yyin;
     extern int yylineno;
@@ -62,6 +66,13 @@ programa:
         printf("======================= ÁRBOL SINTÁCTICO ABSTRACTO (AST) =======================\n");
         imprimir_ast(raiz, 0);
         printf("================================================================================\n\n");
+        
+        if (analizar_semantica(raiz)) {
+            char archivo_cpp[256];
+            snprintf(archivo_cpp, sizeof(archivo_cpp), "%s.cpp", nombre_base);
+            generar_codigo_c(raiz, archivo_cpp, nombre_base);
+        }
+        
         liberar_ast(raiz);
         $$ = NULL;
     }
@@ -254,6 +265,14 @@ int main(int argc, char **argv) {
     if (argc < 2) {
         printf("Error: Falta el archivo de entrada.\nUso: %s <archivo.to>\n", argv[0]);
         return 1;
+    }
+
+    // Extraer el nombre base sin extensión
+    strncpy(nombre_base, argv[1], sizeof(nombre_base) - 1);
+    nombre_base[sizeof(nombre_base) - 1] = '\0';
+    char *dot = strrchr(nombre_base, '.');
+    if (dot) {
+        *dot = '\0';
     }
 
     FILE *archivo = fopen(argv[1], "r");
