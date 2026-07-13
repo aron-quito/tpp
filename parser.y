@@ -2,6 +2,7 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
+    #include "ast.h" 
 
     extern FILE *yyin;
     extern int yylineno;
@@ -18,7 +19,8 @@
 %union {
     int num_entero;
     double num_decimal;
-    char* cadena; /* Mapeado con yylval.cadena de tu lexer para ID y CADENA */
+    char* cadena; 
+    struct NodoAST* nodo; 
 }
 
 /* Tokens de palabras reservadas */
@@ -30,8 +32,6 @@
 %token <num_decimal> NUM_DECIMAL
 %token <cadena> CADENA
 
-
-
 /* Operadores Aritméticos y de Asignación */
 %token MAS MENOS MULT DIV MOD ASIG
 
@@ -41,12 +41,20 @@
 /* Símbolos de agrupación y puntuación */
 %token PARI PARD LLAVEI LLAVED PUNTOCOMA COMA DOS_PUNTOS
 
-/* Precedencia y asociatividad de operadores para resolver ambigüedades matemáticas y lógicas */
+/* Mapeamos qué reglas de la gramática devolverán un nodo del AST */
+%type <nodo> programa lista_elementos elemento declaracion_fun
+%type <nodo> parametros lista_parametros parametro
+%type <nodo> declaracion_var lista_ids declarador bloque_instrucciones instruccion
+%type <nodo> estructura_si estructura_mientras estructura_para estructura_depende
+%type <nodo> lista_casos caso valor_constante lista_impresion elemento_impresion
+%type <nodo> expresion llamada_funcion argumentos lista_argumentos
+
+/* Precedencia y asociatividad de operadores */
 %left IGUAL DIFERENTE MENOR MAYOR MENOR_IGUAL MAYOR_IGUAL
 %left MAS MENOS
 %left MULT DIV MOD
 
-/* Configuración para resolver el dilema del "sino" huérfano (Dangling Else) */
+/* Configuración para resolver el dilema del "sino" huérfano */
 %nonassoc LOWER_THAN_SINO
 %nonassoc SINO
 
@@ -55,166 +63,179 @@
 /* 1. PUNTO DE ENTRADA DE LA GRAMÁTICA */
 programa:
     lista_elementos { 
+        $$ = nuevo_nodo_programa($1); // Enlace con la raíz global
         if (errores_sintacticos == 0) {
-            printf("\nAnálisis sintáctico exitoso. El código es válido.\n"); 
+            printf("\nAnálisis sintáctico exitoso. Estructura del AST:\n"); 
+            imprimir_ast($$, 0); // Se imprimirá el árbol de forma jerárquica
+            liberar_ast($$); // Se libera la memoria del AST al finalizar
         } else {
-            printf("\nAnálisis finalizado con %d error(es) sintáctico(s).\n", errores_sintacticos);
+            printf("\nAnalisis finalizado con %d error(es) sintactico(s).\n", errores_sintacticos);
+            liberar_ast($$);
         }
     }
     ;
 
 lista_elementos:
-    lista_elementos elemento
-    | /* vacío */
+    lista_elementos elemento { $$ = nuevo_nodo_lista_elements($1, $2); }
+    | /* vacío */            { $$ = NULL; }
     ;
 
 elemento:
-    instruccion
-    | declaracion_fun
+    instruccion       { $$ = $1; }
+    | declaracion_fun { $$ = $1; }
     ;
 
 /* 2. DEFINICIÓN DE FUNCIONES Y PARÁMETROS */
 declaracion_fun:
     FUN ID PARI parametros PARD FLECHA tipo LLAVEI bloque_instrucciones LLAVED
+    { $$ = nuevo_nodo_declaracion_fun($2, $7, $4, $9); }
     | FUN ID PARI parametros PARD LLAVEI bloque_instrucciones LLAVED
+    { $$ = nuevo_nodo_declaracion_fun($2, 0, $4, $7); } /* 0 o vacío si no define retorno */
     ;
 
 parametros:
-    lista_parametros
-    | /* vacío (sin parámetros) */
+    lista_parametros { $$ = $1; }
+    | /* vacío */    { $$ = NULL; }
     ;
 
 lista_parametros:
-    lista_parametros COMA parametro
-    | parametro
+    lista_parametros COMA parametro { $$ = nuevo_nodo_lista_parametros($1, $3); }
+    | parametro                    { $$ = nuevo_nodo_lista_parametros(NULL, $1); }
     ;
 
 parametro:
-    tipo ID
+    tipo ID { $$ = nuevo_nodo_parametro($1, $2); }
     ;
 
 tipo:
-    TIPO_ENTERO
-    | TIPO_DECIMAL
+    TIPO_ENTERO   { $$ = TIPO_ENTERO; }
+    | TIPO_DECIMAL { $$ = TIPO_DECIMAL; }
     ;
 
 declaracion_var:
-    tipo lista_ids
+    tipo lista_ids { $$ = nuevo_nodo_declaracion_var($1, $2); }
     ;
 
 lista_ids:
-    lista_ids COMA declarador
-    | declarador
+    lista_ids COMA declarador { $$ = nuevo_nodo_lista_ids($1, $3->nombre_var); } 
+    | declarador              { $$ = nuevo_nodo_lista_ids(NULL, $1->nombre_var); }
     ;
 
 declarador:
-    ID
-    | ID ASIG expresion
+    ID                 { $$ = nuevo_nodo_variable($1); }
+    | ID ASIG expresion { $$ = nuevo_nodo_asignacion($1, $3); }
     ;
 
 /* 3. BLOQUES DE CÓDIGO E INSTRUCCIONES ATÓMICAS */
 bloque_instrucciones:
-    bloque_instrucciones instruccion
-    | /* vacío */
+    bloque_instrucciones instruccion { $$ = nuevo_nodo_lista_elements($1, $2); }
+    | /* vacío */                   { $$ = NULL; }
     ;
 
 instruccion:
-    declaracion_var PUNTOCOMA
-    | ID ASIG expresion PUNTOCOMA
-    | IMPRIMIR PARI lista_impresion PARD PUNTOCOMA
-    | LEER PARI ID PARD PUNTOCOMA
-    | RETORNAR expresion PUNTOCOMA
-    | estructura_si
-    | estructura_mientras
-    | estructura_para
-    | estructura_depende
-    | error PUNTOCOMA { yyerrok; printf("=> [Panic Mode] Error sintáctico ignorado. Analizador recuperado en el ';'.\\n"); }
+    declaracion_var PUNTOCOMA                 { $$ = $1; }
+    | ID ASIG expresion PUNTOCOMA              { $$ = nuevo_nodo_asignacion($1, $3); }
+    | IMPRIMIR PARI lista_impresion PARD PUNTOCOMA { $$ = nuevo_nodo_imprimir($3); }
+    | LEER PARI ID PARD PUNTOCOMA              { $$ = nuevo_nodo_leer($3); }
+    | RETORNAR expresion PUNTOCOMA             { $$ = nuevo_nodo_retornar($2); }
+    | estructura_si                            { $$ = $1; }
+    | estructura_mientras                      { $$ = $1; }
+    | estructura_para                          { $$ = $1; }
+    | estructura_depende                       { $$ = $1; }
+    | error PUNTOCOMA { yyerrok; printf("=> [Panic Mode] Error sintáctico ignorado. Analizador recuperado en el ';'.\n"); $$ = NULL; }
     ;
 
 /* 4. ESTRUCTURAS DE CONTROL DE FLUJO */
 estructura_si:
     SI PARI expresion PARD LLAVEI bloque_instrucciones LLAVED %prec LOWER_THAN_SINO
+    { $$ = nuevo_nodo_si($3, $6, NULL); }
     | SI PARI expresion PARD LLAVEI bloque_instrucciones LLAVED SINO LLAVEI bloque_instrucciones LLAVED
-    | SI PARI error PARD LLAVEI bloque_instrucciones LLAVED %prec LOWER_THAN_SINO { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\\n"); }
-    | SI PARI error PARD LLAVEI bloque_instrucciones LLAVED SINO LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\\n"); }
+    { $$ = nuevo_nodo_si($3, $6, $10); }
+    | SI PARI error PARD LLAVEI bloque_instrucciones LLAVED %prec LOWER_THAN_SINO { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\n"); $$ = NULL; }
+    | SI PARI error PARD LLAVEI bloque_instrucciones LLAVED SINO LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\n"); $$ = NULL; }
     ;
 
 estructura_mientras:
     MIENTRAS PARI expresion PARD LLAVEI bloque_instrucciones LLAVED
-    | MIENTRAS PARI error PARD LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en condición del MIENTRAS. Recuperado en ')'.\\n"); }
+    { $$ = nuevo_nodo_mientras($3, $6); }
+    | MIENTRAS PARI error PARD LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en condición del MIENTRAS. Recuperado en ')'.\n"); $$ = NULL; }
     ;
 
 estructura_para:
     PARA PARI tipo ID ASIG expresion PUNTOCOMA expresion PUNTOCOMA ID ASIG expresion PARD LLAVEI bloque_instrucciones LLAVED
-    | PARA PARI error PARD LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en encabezado del PARA. Recuperado en ')'.\\n"); }
+    { 
+        NodoAST *init = nuevo_nodo_asignacion($4, $6);
+        NodoAST *paso = nuevo_nodo_asignacion($10, $12);
+        $$ = nuevo_nodo_para(init, $8, paso, $15); 
+    }
+    | PARA PARI error PARD LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en encabezado del PARA. Recuperado en ')'.\n"); $$ = NULL; }
     ;
 
 estructura_depende:
     DEPENDE expresion LLAVEI lista_casos LLAVED
-    | DEPENDE error LLAVEI lista_casos LLAVED { yyerrok; printf("=> [Panic Mode] Error en valor del DEPENDE. Recuperado en '{'.\\n"); }
+    { $$ = nuevo_nodo_depende($2, $4); }
+    | DEPENDE error LLAVEI lista_casos LLAVED { yyerrok; printf("=> [Panic Mode] Error en valor del DEPENDE. Recuperado en '{'.\n"); $$ = NULL; }
     ;
 
 lista_casos:
-    lista_casos caso
-    | /* vacío */
+    lista_casos caso { $$ = nuevo_nodo_lista_casos($1, $2); }
+    | /* vacío */    { $$ = NULL; }
     ;
 
-/* Redefinimos 'caso' para que exija un valor constante en lugar de una expresión abierta */
 caso:
-    valor_constante DOS_PUNTOS bloque_instrucciones
-    | OTROS DOS_PUNTOS bloque_instrucciones
+    valor_constante DOS_PUNTOS bloque_instrucciones { $$ = nuevo_nodo_caso($1, $3); }
+    | OTROS DOS_PUNTOS bloque_instrucciones         { $$ = nuevo_nodo_caso(NULL, $3); }
     ;
 
-/* Creamos una nueva regla exclusiva para literales puros */
 valor_constante:
-    NUM_ENTERO
-    | NUM_DECIMAL
-    | CADENA
+    NUM_ENTERO    { $$ = nuevo_nodo_entero($1); }
+    | NUM_DECIMAL { $$ = nuevo_nodo_decimal($1); }
+    | CADENA      { $$ = nuevo_nodo_cadena($1); }
     ;
 
 /* 5. OPERACIONES DE ENTRADA / SALIDA */
 lista_impresion:
-    lista_impresion COMA elemento_impresion
-    | elemento_impresion
+    lista_impresion COMA elemento_impresion { $$ = nuevo_nodo_lista_argumentos($1, $3); }
+    | elemento_impresion                    { $$ = nuevo_nodo_lista_argumentos(NULL, $1); }
     ;
 
 elemento_impresion:
-    CADENA
-    | expresion
+    CADENA      { $$ = nuevo_nodo_cadena($1); }
+    | expresion { $$ = $1; }
     ;
 
 /* 6. EXPRESIONES (Matemáticas, Lógicas y Llamadas a Funciones) */
 expresion:
-    expresion MAS expresion
-    | expresion MENOS expresion
-    | expresion MULT expresion
-    | expresion DIV expresion
-    | expresion MOD expresion
-    | expresion MAYOR expresion
-    | expresion MENOR expresion
-    | expresion MAYOR_IGUAL expresion
-    | expresion MENOR_IGUAL expresion
-    | expresion IGUAL expresion
-    | expresion DIFERENTE expresion
-    | PARI expresion PARD
-    | ID
-    | llamada_funcion
-    | NUM_ENTERO
-    | NUM_DECIMAL
+    expresion MAS expresion         { $$ = nuevo_nodo_operacion(MAS, $1, $3); }
+    | expresion MENOS expresion     { $$ = nuevo_nodo_operacion(MENOS, $1, $3); }
+    | expresion MULT expresion      { $$ = nuevo_nodo_operacion(MULT, $1, $3); }
+    | expresion DIV expresion       { $$ = nuevo_nodo_operacion(DIV, $1, $3); }
+    | expresion MOD expresion       { $$ = nuevo_nodo_operacion(MOD, $1, $3); }
+    | expresion MAYOR expresion     { $$ = nuevo_nodo_operacion(MAYOR, $1, $3); }
+    | expresion MENOR expresion     { $$ = nuevo_nodo_operacion(MENOR, $1, $3); }
+    | expresion MAYOR_IGUAL expresion { $$ = nuevo_nodo_operacion(MAYOR_IGUAL, $1, $3); }
+    | expresion MENOR_IGUAL expresion { $$ = nuevo_nodo_operacion(MENOR_IGUAL, $1, $3); }
+    | expresion IGUAL expresion     { $$ = nuevo_nodo_operacion(IGUAL, $1, $3); }
+    | expresion DIFERENTE expresion { $$ = nuevo_nodo_operacion(DIFERENTE, $1, $3); }
+    | PARI expresion PARD           { $$ = $2; }
+    | ID                            { $$ = nuevo_nodo_variable($1); }
+    | llamada_funcion               { $$ = $1; }
+    | NUM_ENTERO                    { $$ = nuevo_nodo_entero($1); }
+    | NUM_DECIMAL                   { $$ = nuevo_nodo_decimal($1); }
     ;
 
 llamada_funcion:
-    ID PARI argumentos PARD
+    ID PARI argumentos PARD { $$ = nuevo_nodo_llamada_funcion($1, $3); }
     ;
 
 argumentos:
-    lista_argumentos
-    | /* vacío */
+    lista_argumentos { $$ = $1; }
+    | /* vacío */    { $$ = NULL; }
     ;
 
 lista_argumentos:
-    expresion
-    | lista_argumentos COMA expresion
+    expresion                      { $$ = nuevo_nodo_lista_argumentos(NULL, $1); }
+    | lista_argumentos COMA expresion { $$ = nuevo_nodo_lista_argumentos($1, $3); }
     ;
 
 %%
@@ -225,11 +246,11 @@ void yyerror(const char *s) {
     int col_exacta = columna - (int)strlen(yytext);
     if (col_exacta < 1) col_exacta = 1;
 
-    fprintf(stderr, "\n¡Ups! Hay un problema sintáctico en tu código.\n");
+    fprintf(stderr, "\n¡Ups! Hay un problema sintactico en tu codigo.\n");
     fprintf(stderr, "Linea %d, Columna %d\n", yylineno, col_exacta);
     
     if (yytext[0] == '\0') {
-        fprintf(stderr, "Detalle: Llegaste al final del archivo inesperadamente. ¿Te faltó cerrar una llave '}' o colocar un ';'?\n");
+        fprintf(stderr, "Detalle: Llegaste al final del archivo inesperadamente. ¿Te falto cerrar una llave '}' o colocar un ';'?\n");
     } else {
         fprintf(stderr, "Detalle: %s cerca del elemento '%s'\n\n", s, yytext);
     }
