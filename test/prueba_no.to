@@ -1,0 +1,8 @@
+entero a = 5, b=1.2;
+decimal z;
+decimal z;
+
+z = a * b;
+
+imprimir(z);
+
