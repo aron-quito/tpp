@@ -77,7 +77,7 @@ programa:
     ;
 
 lista_elementos:
-    lista_elementos elemento { $$ = nuevo_nodo_lista_elemento($1, $2); }
+    lista_elementos elemento { $$ = nuevo_nodo_lista_elementos($1, $2); }
     | /* vacío */            { $$ = NULL; }
     ;
 
@@ -129,7 +129,7 @@ declarador:
 
 /* 3. BLOQUES DE CÓDIGO E INSTRUCCIONES ATÓMICAS */
 bloque_instrucciones:
-    bloque_instrucciones instruccion { $$ = nuevo_nodo_lista_elemento($1, $2); }
+    bloque_instrucciones instruccion { $$ = nuevo_nodo_lista_elementos($1, $2); }
     | /* vacío */                   { $$ = NULL; }
     ;
 
