@@ -86,16 +86,17 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 18 "parser.y"
+#line 19 "parser.y"
 
     int num_entero;
     double num_decimal;
-    char* cadena; /* Mapeado con yylval.cadena de tu lexer para ID y CADENA */
+    char* cadena; 
+    struct NodoAST* nodo; 
 
 
 
 /* Line 1676 of yacc.c  */
-#line 99 "parser.tab.h"
+#line 100 "parser.tab.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */

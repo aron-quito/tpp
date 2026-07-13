@@ -48,6 +48,7 @@
 %type <nodo> estructura_si estructura_mientras estructura_para estructura_depende
 %type <nodo> lista_casos caso valor_constante lista_impresion elemento_impresion
 %type <nodo> expresion llamada_funcion argumentos lista_argumentos
+%type <num_entero> tipo 
 
 /* Precedencia y asociatividad de operadores */
 %left IGUAL DIFERENTE MENOR MAYOR MENOR_IGUAL MAYOR_IGUAL
