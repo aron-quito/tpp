@@ -66,7 +66,7 @@ programa:
     lista_elementos { 
         $$ = nuevo_nodo_programa($1); // Enlace con la raíz global
         if (errores_sintacticos == 0) {
-            printf("\nAnálisis sintáctico exitoso. Estructura del AST:\n"); 
+            printf("\nAnalisis sintactico exitoso. Estructura del AST:\n"); 
             imprimir_ast($$, 0); // Se imprimirá el árbol de forma jerárquica
             liberar_ast($$); // Se libera la memoria del AST al finalizar
         } else {
