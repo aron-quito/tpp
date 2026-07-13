@@ -1,15 +1,9 @@
-decimal nota1;
-decimal nota2;
+decimal nota1 = 12+, nota2 = 5+;
 decimal promedio;
-
-imprimir("Ingrese la primera nota: ");
-leer(nota1);
-imprimir("Ingrese la segunda nota: ");
-leer(nota2);
 
 promedio = (nota1 + nota2) / 2.0;
 
-si (promedio >= 10.5) {
+si (promedio >= 10.5+) {
     imprimir("¡Felicidades! Has aprobado con: ", promedio);
 } sino {
     imprimir("Lo siento, has desaprobado con: ", promedio);

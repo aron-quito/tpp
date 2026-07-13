@@ -8,6 +8,8 @@
     extern int columna;
     extern char *yytext;
     
+    int errores_sintacticos = 0;
+
     void yyerror(const char *s);
     int yylex();
 %}
@@ -52,7 +54,13 @@
 
 /* 1. PUNTO DE ENTRADA DE LA GRAMÁTICA */
 programa:
-    lista_elementos { printf("Análisis sintáctico exitoso. El código es válido.\n"); }
+    lista_elementos { 
+        if (errores_sintacticos == 0) {
+            printf("\nAnálisis sintáctico exitoso. El código es válido.\n"); 
+        } else {
+            printf("\nAnálisis finalizado con %d error(es) sintáctico(s).\n", errores_sintacticos);
+        }
+    }
     ;
 
 lista_elementos:
@@ -95,8 +103,13 @@ declaracion_var:
     ;
 
 lista_ids:
-    lista_ids COMA ID
-    | ID
+    lista_ids COMA declarador
+    | declarador
+    ;
+
+declarador:
+    ID
+    | ID ASIG expresion
     ;
 
 /* 3. BLOQUES DE CÓDIGO E INSTRUCCIONES ATÓMICAS */
@@ -115,24 +128,30 @@ instruccion:
     | estructura_mientras
     | estructura_para
     | estructura_depende
+    | error PUNTOCOMA { yyerrok; printf("=> [Panic Mode] Error sintáctico ignorado. Analizador recuperado en el ';'.\\n"); }
     ;
 
 /* 4. ESTRUCTURAS DE CONTROL DE FLUJO */
 estructura_si:
     SI PARI expresion PARD LLAVEI bloque_instrucciones LLAVED %prec LOWER_THAN_SINO
     | SI PARI expresion PARD LLAVEI bloque_instrucciones LLAVED SINO LLAVEI bloque_instrucciones LLAVED
+    | SI PARI error PARD LLAVEI bloque_instrucciones LLAVED %prec LOWER_THAN_SINO { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\\n"); }
+    | SI PARI error PARD LLAVEI bloque_instrucciones LLAVED SINO LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\\n"); }
     ;
 
 estructura_mientras:
     MIENTRAS PARI expresion PARD LLAVEI bloque_instrucciones LLAVED
+    | MIENTRAS PARI error PARD LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en condición del MIENTRAS. Recuperado en ')'.\\n"); }
     ;
 
 estructura_para:
     PARA PARI tipo ID ASIG expresion PUNTOCOMA expresion PUNTOCOMA ID ASIG expresion PARD LLAVEI bloque_instrucciones LLAVED
+    | PARA PARI error PARD LLAVEI bloque_instrucciones LLAVED { yyerrok; printf("=> [Panic Mode] Error en encabezado del PARA. Recuperado en ')'.\\n"); }
     ;
 
 estructura_depende:
     DEPENDE expresion LLAVEI lista_casos LLAVED
+    | DEPENDE error LLAVEI lista_casos LLAVED { yyerrok; printf("=> [Panic Mode] Error en valor del DEPENDE. Recuperado en '{'.\\n"); }
     ;
 
 lista_casos:
@@ -202,6 +221,7 @@ lista_argumentos:
 
 /* 7. REPORTE DE ERRORES DINÁMICO */
 void yyerror(const char *s) {
+    errores_sintacticos++;
     int col_exacta = columna - (int)strlen(yytext);
     if (col_exacta < 1) col_exacta = 1;
 

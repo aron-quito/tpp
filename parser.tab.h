@@ -122,7 +122,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 16 "parser.y"
+#line 18 "parser.y"
 {
     int num_entero;
     double num_decimal;
