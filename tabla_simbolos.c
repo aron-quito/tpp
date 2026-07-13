@@ -30,16 +30,29 @@ void insertar_simbolo(char *nombre, TipoDato tipo, int es_funcion, int alcance) 
     tabla = nuevo;
 }
 
-/* Función para buscar si una variable ya existe */
-Simbolo* buscar_simbolo(char *nombre) {
+/* Función para buscar si una variable existe priorizando el ámbito actual o global */
+Simbolo* buscar_simbolo_con_ambito(char *nombre, int alcance_actual) {
+    // Primera pasada: Buscar en el ámbito local en el que estamos actualmente
     Simbolo *actual = tabla;
     while (actual != NULL) {
-        if (strcmp(actual->nombre, nombre) == 0) {
-            return actual; // Lo encontró
+        if (strcmp(actual->nombre, nombre) == 0 && actual->alcance == alcance_actual) {
+            return actual; // Encontrado en el ámbito local
         }
         actual = actual->sig;
     }
-    return NULL; // No existe
+
+    // Segunda pasada: Si no se encontró localmente y no estamos ya en el global, buscar en el global (0)
+    if (alcance_actual != 0) {
+        actual = tabla;
+        while (actual != NULL) {
+            if (strcmp(actual->nombre, nombre) == 0 && actual->alcance == 0) {
+                return actual; // Encontrado en el ámbito global
+            }
+            actual = actual->sig;
+        }
+    }
+
+    return NULL; // No existe en ningún ámbito accesible
 }
 
 /* Para debugear y ver qué tiene nuestra tabla */
