@@ -27,5 +27,5 @@ leer(op);
 // La llamada a la función es una expresión que se asigna, mucho más intuitivo
 res = calcular(num1, num2, op);
 
-// Imprimir el resultado de forma limpia
+// Imprimir el resultado de fo limpia
 imprimir("El resultado es: ", res);

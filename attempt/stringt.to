@@ -1,0 +1,4 @@
+entero edad;
+imprimir("dime tu edad: ");
+leer(edad);
+imprimir("TOLON TIENE: ", edad);
