@@ -13,6 +13,8 @@
 
     void yyerror(const char *s);
     int yylex();
+
+    int ejecutar_analisis_semantico(struct NodoAST *raiz);
 %}
 
 /* DEFINICIÓN DE LA UNIÓN: Tipos de datos para el AST o valores semánticos */
@@ -61,8 +63,6 @@
 
 %%
 
-int ejecutar_analisis_semantico(struct NodoAST *raiz);
-
 /* 1. PUNTO DE ENTRADA DE LA GRAMÁTICA */
 programa:
     lista_elementos { 
@@ -75,7 +75,7 @@ programa:
             if (semantico_ok) {
                 printf("\nEstructura final del AST validada:\n");
                 imprimir_ast($$, 0); // Se imprimirá el árbol de forma jerárquica
-            }
+            }   
             liberar_ast($$); // Se libera la memoria del AST al finalizar
         } else {
             printf("\nAnalisis finalizado con %d error(es) sintactico(s).\n", errores_sintacticos);
