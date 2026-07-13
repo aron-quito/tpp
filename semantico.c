@@ -90,7 +90,7 @@ void analizar_semantico(NodoAST *nodo) {
             /* Busca si la variable destino ya existe en la tabla de símbolos */
             Simbolo *sym = buscar_simbolo(nodo->nombre_var);
             if (sym == NULL) {
-                fprintf(stderr, "Error Semántico: Intento de asignación a la variable '%s' no declarada.\n", nodo->nombre_var);
+                fprintf(stderr, "Error Semantico: Intento de asignacion a la variable '%s' no declarada.\n", nodo->nombre_var);
                 errores_semanticos++;
             }
             /* Analiza el nodo izquierdo que contiene el valor o expresión a asignar */
@@ -102,7 +102,7 @@ void analizar_semantico(NodoAST *nodo) {
             /* Comprueba que la variable utilizada en una expresión matemática/lógica exista en el ámbito actual */
             Simbolo *sym = buscar_simbolo(nodo->nombre_var);
             if (sym == NULL) {
-                fprintf(stderr, "Error Semántico: La variable '%s' se está usando pero no ha sido declarada.\n", nodo->nombre_var);
+                fprintf(stderr, "Error Semantico: La variable '%s' se esta usando pero no ha sido declarada.\n", nodo->nombre_var);
                 errores_semanticos++;
             }
             break;
@@ -112,7 +112,7 @@ void analizar_semantico(NodoAST *nodo) {
             /* Valida que la variable pasada a la instrucción Leer() haya sido declarada previamente */
             Simbolo *sym = buscar_simbolo(nodo->nombre_var);
             if (sym == NULL) {
-                fprintf(stderr, "Error Semántico: La función Leer() intenta escribir en '%s', la cual no ha sido declarada.\n", nodo->nombre_var);
+                fprintf(stderr, "Error Semantico: La funcion Leer() intenta escribir en '%s', la cual no ha sido declarada.\n", nodo->nombre_var);
                 errores_semanticos++;
             }
             break;
@@ -122,11 +122,11 @@ void analizar_semantico(NodoAST *nodo) {
             /* Recupera los datos del identificador de la función que se pretende invocar */
             Simbolo *sym = buscar_simbolo(nodo->nombre_var);
             if (sym == NULL) {
-                fprintf(stderr, "Error Semántico: La función '%s' no ha sido declarada en el sistema.\n", nodo->nombre_var);
+                fprintf(stderr, "Error Semantico: La función '%s' no ha sido declarada en el sistema.\n", nodo->nombre_var);
                 errores_semanticos++;
             } else if (sym->es_funcion == 0) {
                 /* Detecta errores si el usuario intenta invocar una variable como si fuera función */
-                fprintf(stderr, "Error Semántico: El identificador '%s' no es una función, es una variable.\n", nodo->nombre_var);
+                fprintf(stderr, "Error Semantico: El identificador '%s' no es una funcion, es una variable.\n", nodo->nombre_var);
                 errores_semanticos++;
             }
             /* Evalúa de forma recursiva los argumentos pasados en la llamada */
