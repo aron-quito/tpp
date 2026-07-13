@@ -199,17 +199,16 @@ void analizar_semantico(NodoAST *nodo) {
 
 /* Inicia el recorrido general del árbol e inicializa los contadores globales de control */
 int ejecutar_analisis_semantico(NodoAST *raiz) {
-    printf("\n=== EJECUTANDO ANÁLISIS SEMÁNTICO ===\n");
     ambito_actual = 0;
     errores_semanticos = 0;
 
     analizar_semantico(raiz);
 
     if (errores_semanticos == 0) {
-        printf("Análisis semántico completado con éxito. Todo en orden.\n");
+        printf("Analisis semantico completado con exito. Todo en orden.\n");
         return 1;
     } else {
-        printf("Análisis semántico finalizado. Se detectaron %d error(es) lógico(s).\n", errores_semanticos);
+        printf("Analisis semantico finalizado. Se detectaron %d error(es) logico(s).\n", errores_semanticos);
         return 0;
     }
 }
