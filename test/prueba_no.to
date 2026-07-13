@@ -1,8 +1,5 @@
-entero a = 5, b=1.2;
-decimal z;
-decimal z;
+entero x = 20;
+decimal y = 3.14;
+entero x;
 
-z = a * b;
-
-imprimir(z);
-
+imprimir(x, y);
