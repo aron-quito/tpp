@@ -74,6 +74,7 @@
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h" 
+    #include "tabla_simbolos.h"
 
     extern FILE *yyin;
     extern int yylineno;
@@ -89,7 +90,7 @@
 
 
 /* Line 189 of yacc.c  */
-#line 93 "parser.tab.c"
+#line 94 "parser.tab.c"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -163,7 +164,7 @@ typedef union YYSTYPE
 {
 
 /* Line 214 of yacc.c  */
-#line 21 "parser.y"
+#line 22 "parser.y"
 
     int num_entero;
     double num_decimal;
@@ -173,7 +174,7 @@ typedef union YYSTYPE
 
 
 /* Line 214 of yacc.c  */
-#line 177 "parser.tab.c"
+#line 178 "parser.tab.c"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
@@ -185,7 +186,7 @@ typedef union YYSTYPE
 
 
 /* Line 264 of yacc.c  */
-#line 189 "parser.tab.c"
+#line 190 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -506,14 +507,14 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    68,    68,    88,    89,    93,    94,    99,   101,   106,
-     107,   111,   112,   116,   120,   121,   125,   129,   130,   134,
-     135,   140,   141,   145,   146,   147,   148,   149,   150,   151,
-     152,   153,   154,   159,   161,   163,   164,   168,   170,   174,
-     180,   184,   186,   190,   191,   195,   196,   200,   201,   202,
-     207,   208,   212,   213,   218,   219,   220,   221,   222,   223,
-     224,   225,   226,   227,   228,   229,   230,   231,   232,   233,
-     237,   241,   242,   246,   247
+       0,    69,    69,    91,    92,    96,    97,   102,   104,   109,
+     110,   114,   115,   119,   123,   124,   128,   132,   133,   137,
+     138,   143,   144,   148,   149,   150,   151,   152,   153,   154,
+     155,   156,   157,   162,   164,   166,   167,   171,   173,   177,
+     183,   187,   189,   193,   194,   198,   199,   203,   204,   205,
+     210,   211,   215,   216,   221,   222,   223,   224,   225,   226,
+     227,   228,   229,   230,   231,   232,   233,   234,   235,   236,
+     240,   244,   245,   249,   250
 };
 #endif
 
@@ -1584,7 +1585,7 @@ yyreduce:
         case 2:
 
 /* Line 1455 of yacc.c  */
-#line 68 "parser.y"
+#line 69 "parser.y"
     { 
         (yyval.nodo) = nuevo_nodo_programa((yyvsp[(1) - (1)].nodo)); // Enlace con la raíz global
         if (errores_sintacticos == 0) {
@@ -1593,6 +1594,7 @@ yyreduce:
             int semantico_ok = ejecutar_analisis_semantico((yyval.nodo));
             
             if (semantico_ok) {
+                imprimir_tabla();
                 printf("\nEstructura final del AST validada:\n");
                 imprimir_ast((yyval.nodo), 0); // Se imprimirá el árbol de forma jerárquica
             }   
@@ -1600,6 +1602,7 @@ yyreduce:
         } else {
             printf("\nAnalisis finalizado con %d error(es) sintactico(s).\n", errores_sintacticos);
             liberar_ast((yyval.nodo));
+            liberar_tabla();
         }
     ;}
     break;
@@ -1607,259 +1610,259 @@ yyreduce:
   case 3:
 
 /* Line 1455 of yacc.c  */
-#line 88 "parser.y"
+#line 91 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 4:
 
 /* Line 1455 of yacc.c  */
-#line 89 "parser.y"
+#line 92 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 5:
 
 /* Line 1455 of yacc.c  */
-#line 93 "parser.y"
+#line 96 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 6:
 
 /* Line 1455 of yacc.c  */
-#line 94 "parser.y"
+#line 97 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 7:
 
 /* Line 1455 of yacc.c  */
-#line 100 "parser.y"
+#line 103 "parser.y"
     { (yyval.nodo) = nuevo_nodo_declaracion_fun((yyvsp[(2) - (10)].cadena), (yyvsp[(7) - (10)].num_entero), (yyvsp[(4) - (10)].nodo), (yyvsp[(9) - (10)].nodo)); ;}
     break;
 
   case 8:
 
 /* Line 1455 of yacc.c  */
-#line 102 "parser.y"
+#line 105 "parser.y"
     { (yyval.nodo) = nuevo_nodo_declaracion_fun((yyvsp[(2) - (8)].cadena), 0, (yyvsp[(4) - (8)].nodo), (yyvsp[(7) - (8)].nodo)); ;}
     break;
 
   case 9:
 
 /* Line 1455 of yacc.c  */
-#line 106 "parser.y"
+#line 109 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 10:
 
 /* Line 1455 of yacc.c  */
-#line 107 "parser.y"
+#line 110 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 11:
 
 /* Line 1455 of yacc.c  */
-#line 111 "parser.y"
+#line 114 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_parametros((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 12:
 
 /* Line 1455 of yacc.c  */
-#line 112 "parser.y"
+#line 115 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_parametros(NULL, (yyvsp[(1) - (1)].nodo)); ;}
     break;
 
   case 13:
 
 /* Line 1455 of yacc.c  */
-#line 116 "parser.y"
+#line 119 "parser.y"
     { (yyval.nodo) = nuevo_nodo_parametro((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].cadena)); ;}
     break;
 
   case 14:
 
 /* Line 1455 of yacc.c  */
-#line 120 "parser.y"
+#line 123 "parser.y"
     { (yyval.num_entero) = TIPO_ENTERO; ;}
     break;
 
   case 15:
 
 /* Line 1455 of yacc.c  */
-#line 121 "parser.y"
+#line 124 "parser.y"
     { (yyval.num_entero) = TIPO_DECIMAL; ;}
     break;
 
   case 16:
 
 /* Line 1455 of yacc.c  */
-#line 125 "parser.y"
+#line 128 "parser.y"
     { (yyval.nodo) = nuevo_nodo_declaracion_var((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 17:
 
 /* Line 1455 of yacc.c  */
-#line 129 "parser.y"
+#line 132 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_ids((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)->nombre_var); ;}
     break;
 
   case 18:
 
 /* Line 1455 of yacc.c  */
-#line 130 "parser.y"
+#line 133 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_ids(NULL, (yyvsp[(1) - (1)].nodo)->nombre_var); ;}
     break;
 
   case 19:
 
 /* Line 1455 of yacc.c  */
-#line 134 "parser.y"
+#line 137 "parser.y"
     { (yyval.nodo) = nuevo_nodo_variable((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 20:
 
 /* Line 1455 of yacc.c  */
-#line 135 "parser.y"
+#line 138 "parser.y"
     { (yyval.nodo) = nuevo_nodo_asignacion((yyvsp[(1) - (3)].cadena), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 21:
 
 /* Line 1455 of yacc.c  */
-#line 140 "parser.y"
+#line 143 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 22:
 
 /* Line 1455 of yacc.c  */
-#line 141 "parser.y"
+#line 144 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 23:
 
 /* Line 1455 of yacc.c  */
-#line 145 "parser.y"
+#line 148 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (2)].nodo); ;}
     break;
 
   case 24:
 
 /* Line 1455 of yacc.c  */
-#line 146 "parser.y"
+#line 149 "parser.y"
     { (yyval.nodo) = nuevo_nodo_asignacion((yyvsp[(1) - (4)].cadena), (yyvsp[(3) - (4)].nodo)); ;}
     break;
 
   case 25:
 
 /* Line 1455 of yacc.c  */
-#line 147 "parser.y"
+#line 150 "parser.y"
     { (yyval.nodo) = nuevo_nodo_imprimir((yyvsp[(3) - (5)].nodo)); ;}
     break;
 
   case 26:
 
 /* Line 1455 of yacc.c  */
-#line 148 "parser.y"
+#line 151 "parser.y"
     { (yyval.nodo) = nuevo_nodo_leer((yyvsp[(3) - (5)].cadena)); ;}
     break;
 
   case 27:
 
 /* Line 1455 of yacc.c  */
-#line 149 "parser.y"
+#line 152 "parser.y"
     { (yyval.nodo) = nuevo_nodo_retornar((yyvsp[(2) - (3)].nodo)); ;}
     break;
 
   case 28:
 
 /* Line 1455 of yacc.c  */
-#line 150 "parser.y"
+#line 153 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 29:
 
 /* Line 1455 of yacc.c  */
-#line 151 "parser.y"
+#line 154 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 30:
 
 /* Line 1455 of yacc.c  */
-#line 152 "parser.y"
+#line 155 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 31:
 
 /* Line 1455 of yacc.c  */
-#line 153 "parser.y"
+#line 156 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 32:
 
 /* Line 1455 of yacc.c  */
-#line 154 "parser.y"
+#line 157 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error sintáctico ignorado. Analizador recuperado en el ';'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 33:
 
 /* Line 1455 of yacc.c  */
-#line 160 "parser.y"
+#line 163 "parser.y"
     { (yyval.nodo) = nuevo_nodo_si((yyvsp[(3) - (7)].nodo), (yyvsp[(6) - (7)].nodo), NULL); ;}
     break;
 
   case 34:
 
 /* Line 1455 of yacc.c  */
-#line 162 "parser.y"
+#line 165 "parser.y"
     { (yyval.nodo) = nuevo_nodo_si((yyvsp[(3) - (11)].nodo), (yyvsp[(6) - (11)].nodo), (yyvsp[(10) - (11)].nodo)); ;}
     break;
 
   case 35:
 
 /* Line 1455 of yacc.c  */
-#line 163 "parser.y"
+#line 166 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 36:
 
 /* Line 1455 of yacc.c  */
-#line 164 "parser.y"
+#line 167 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 37:
 
 /* Line 1455 of yacc.c  */
-#line 169 "parser.y"
+#line 172 "parser.y"
     { (yyval.nodo) = nuevo_nodo_mientras((yyvsp[(3) - (7)].nodo), (yyvsp[(6) - (7)].nodo)); ;}
     break;
 
   case 38:
 
 /* Line 1455 of yacc.c  */
-#line 170 "parser.y"
+#line 173 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en condición del MIENTRAS. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 39:
 
 /* Line 1455 of yacc.c  */
-#line 175 "parser.y"
+#line 178 "parser.y"
     { 
         NodoAST *init = nuevo_nodo_asignacion((yyvsp[(4) - (16)].cadena), (yyvsp[(6) - (16)].nodo));
         NodoAST *paso = nuevo_nodo_asignacion((yyvsp[(10) - (16)].cadena), (yyvsp[(12) - (16)].nodo));
@@ -1870,252 +1873,252 @@ yyreduce:
   case 40:
 
 /* Line 1455 of yacc.c  */
-#line 180 "parser.y"
+#line 183 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en encabezado del PARA. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 41:
 
 /* Line 1455 of yacc.c  */
-#line 185 "parser.y"
+#line 188 "parser.y"
     { (yyval.nodo) = nuevo_nodo_depende((yyvsp[(2) - (5)].nodo), (yyvsp[(4) - (5)].nodo)); ;}
     break;
 
   case 42:
 
 /* Line 1455 of yacc.c  */
-#line 186 "parser.y"
+#line 189 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en valor del DEPENDE. Recuperado en '{'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 43:
 
 /* Line 1455 of yacc.c  */
-#line 190 "parser.y"
+#line 193 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_casos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 44:
 
 /* Line 1455 of yacc.c  */
-#line 191 "parser.y"
+#line 194 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 45:
 
 /* Line 1455 of yacc.c  */
-#line 195 "parser.y"
+#line 198 "parser.y"
     { (yyval.nodo) = nuevo_nodo_caso((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 46:
 
 /* Line 1455 of yacc.c  */
-#line 196 "parser.y"
+#line 199 "parser.y"
     { (yyval.nodo) = nuevo_nodo_caso(NULL, (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 47:
 
 /* Line 1455 of yacc.c  */
-#line 200 "parser.y"
+#line 203 "parser.y"
     { (yyval.nodo) = nuevo_nodo_entero((yyvsp[(1) - (1)].num_entero)); ;}
     break;
 
   case 48:
 
 /* Line 1455 of yacc.c  */
-#line 201 "parser.y"
+#line 204 "parser.y"
     { (yyval.nodo) = nuevo_nodo_decimal((yyvsp[(1) - (1)].num_decimal)); ;}
     break;
 
   case 49:
 
 /* Line 1455 of yacc.c  */
-#line 202 "parser.y"
+#line 205 "parser.y"
     { (yyval.nodo) = nuevo_nodo_cadena((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 50:
 
 /* Line 1455 of yacc.c  */
-#line 207 "parser.y"
+#line 210 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 51:
 
 /* Line 1455 of yacc.c  */
-#line 208 "parser.y"
+#line 211 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos(NULL, (yyvsp[(1) - (1)].nodo)); ;}
     break;
 
   case 52:
 
 /* Line 1455 of yacc.c  */
-#line 212 "parser.y"
+#line 215 "parser.y"
     { (yyval.nodo) = nuevo_nodo_cadena((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 53:
 
 /* Line 1455 of yacc.c  */
-#line 213 "parser.y"
+#line 216 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 54:
 
 /* Line 1455 of yacc.c  */
-#line 218 "parser.y"
+#line 221 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAS, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 55:
 
 /* Line 1455 of yacc.c  */
-#line 219 "parser.y"
+#line 222 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOS, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 56:
 
 /* Line 1455 of yacc.c  */
-#line 220 "parser.y"
+#line 223 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MULT, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 57:
 
 /* Line 1455 of yacc.c  */
-#line 221 "parser.y"
+#line 224 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(DIV, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 58:
 
 /* Line 1455 of yacc.c  */
-#line 222 "parser.y"
+#line 225 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MOD, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 59:
 
 /* Line 1455 of yacc.c  */
-#line 223 "parser.y"
+#line 226 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAYOR, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 60:
 
 /* Line 1455 of yacc.c  */
-#line 224 "parser.y"
+#line 227 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOR, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 61:
 
 /* Line 1455 of yacc.c  */
-#line 225 "parser.y"
+#line 228 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAYOR_IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 62:
 
 /* Line 1455 of yacc.c  */
-#line 226 "parser.y"
+#line 229 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOR_IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 63:
 
 /* Line 1455 of yacc.c  */
-#line 227 "parser.y"
+#line 230 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 64:
 
 /* Line 1455 of yacc.c  */
-#line 228 "parser.y"
+#line 231 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(DIFERENTE, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 65:
 
 /* Line 1455 of yacc.c  */
-#line 229 "parser.y"
+#line 232 "parser.y"
     { (yyval.nodo) = (yyvsp[(2) - (3)].nodo); ;}
     break;
 
   case 66:
 
 /* Line 1455 of yacc.c  */
-#line 230 "parser.y"
+#line 233 "parser.y"
     { (yyval.nodo) = nuevo_nodo_variable((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 67:
 
 /* Line 1455 of yacc.c  */
-#line 231 "parser.y"
+#line 234 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 68:
 
 /* Line 1455 of yacc.c  */
-#line 232 "parser.y"
+#line 235 "parser.y"
     { (yyval.nodo) = nuevo_nodo_entero((yyvsp[(1) - (1)].num_entero)); ;}
     break;
 
   case 69:
 
 /* Line 1455 of yacc.c  */
-#line 233 "parser.y"
+#line 236 "parser.y"
     { (yyval.nodo) = nuevo_nodo_decimal((yyvsp[(1) - (1)].num_decimal)); ;}
     break;
 
   case 70:
 
 /* Line 1455 of yacc.c  */
-#line 237 "parser.y"
+#line 240 "parser.y"
     { (yyval.nodo) = nuevo_nodo_llamada_funcion((yyvsp[(1) - (4)].cadena), (yyvsp[(3) - (4)].nodo)); ;}
     break;
 
   case 71:
 
 /* Line 1455 of yacc.c  */
-#line 241 "parser.y"
+#line 244 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 72:
 
 /* Line 1455 of yacc.c  */
-#line 242 "parser.y"
+#line 245 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 73:
 
 /* Line 1455 of yacc.c  */
-#line 246 "parser.y"
+#line 249 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos(NULL, (yyvsp[(1) - (1)].nodo)); ;}
     break;
 
   case 74:
 
 /* Line 1455 of yacc.c  */
-#line 247 "parser.y"
+#line 250 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
 
 
 /* Line 1455 of yacc.c  */
-#line 2119 "parser.tab.c"
+#line 2122 "parser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2327,7 +2330,7 @@ yyreturn:
 
 
 /* Line 1675 of yacc.c  */
-#line 250 "parser.y"
+#line 253 "parser.y"
 
 
 /* 7. REPORTE DE ERRORES DINÁMICO */

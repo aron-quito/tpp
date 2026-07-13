@@ -3,6 +3,7 @@
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h" 
+    #include "tabla_simbolos.h"
 
     extern FILE *yyin;
     extern int yylineno;
@@ -73,6 +74,7 @@ programa:
             int semantico_ok = ejecutar_analisis_semantico($$);
             
             if (semantico_ok) {
+                imprimir_tabla();
                 printf("\nEstructura final del AST validada:\n");
                 imprimir_ast($$, 0); // Se imprimirá el árbol de forma jerárquica
             }   
@@ -80,6 +82,7 @@ programa:
         } else {
             printf("\nAnalisis finalizado con %d error(es) sintactico(s).\n", errores_sintacticos);
             liberar_ast($$);
+            liberar_tabla();
         }
     }
     ;

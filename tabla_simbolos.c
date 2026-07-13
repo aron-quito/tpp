@@ -44,10 +44,10 @@ Simbolo* buscar_simbolo(char *nombre) {
 
 /* Para debugear y ver qué tiene nuestra tabla */
 void imprimir_tabla() {
-    printf("\n=== TABLA DE SÍMBOLOS ===\n");
+    printf("\n=== TABLA DE SIMBOLOS ===\n");
     Simbolo *actual = tabla;
     while (actual != NULL) {
-        printf("Nombre: %-15s | Tipo: %-8s | ¿Es Fun?: %d | Ámbito: %d\n",
+        printf("Nombre: %-15s | Tipo: %-8s | Es Fun?: %d | Ambito: %d\n",
                actual->nombre,
                (actual->tipo == T_ENTERO) ? "ENTERO" : (actual->tipo == T_DECIMAL) ? "DECIMAL" : "CADENA",
                actual->es_funcion,

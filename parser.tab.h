@@ -86,7 +86,7 @@ typedef union YYSTYPE
 {
 
 /* Line 1676 of yacc.c  */
-#line 21 "parser.y"
+#line 22 "parser.y"
 
     int num_entero;
     double num_decimal;
