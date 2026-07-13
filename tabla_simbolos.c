@@ -10,8 +10,8 @@ extern int errores_semanticos;  // Contador global de errores semánticos
 
 /* Función para insertar una variable o función en la tabla */
 void insertar_simbolo(char *nombre, TipoDato tipo, int es_funcion, int alcance) {
-    // Primero verificamos si ya existe en el mismo alcance (error de doble declaración)
-    Simbolo *existente = buscar_simbolo(nombre);
+    // Verificamos si ya existe en el MISMO alcance exacto (error de doble declaración)    
+    Simbolo *existente = buscar_simbolo_con_ambito(nombre, alcance);    
     if (existente && existente->alcance == alcance) {
         fprintf(stderr, "Error Semantico: La variable o funcion '%s' ya fue declarada en este ambito.\n", nombre);
         errores_semanticos++;
