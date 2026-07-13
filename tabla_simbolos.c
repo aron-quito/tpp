@@ -6,12 +6,15 @@
 /* La cabeza de nuestra lista enlazada (la tabla global) */
 Simbolo *tabla = NULL;
 
+extern int errores_semanticos;  // Contador global de errores semánticos
+
 /* Función para insertar una variable o función en la tabla */
 void insertar_simbolo(char *nombre, TipoDato tipo, int es_funcion, int alcance) {
     // Primero verificamos si ya existe en el mismo alcance (error de doble declaración)
     Simbolo *existente = buscar_simbolo(nombre);
     if (existente && existente->alcance == alcance) {
-        fprintf(stderr, "Error Semántico: La variable o función '%s' ya fue declarada en este ámbito.\n", nombre);
+        fprintf(stderr, "Error Semantico: La variable o funcion '%s' ya fue declarada en este ambito.\n", nombre);
+        errores_semanticos++;
         return;
     }
 
