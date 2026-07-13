@@ -88,7 +88,7 @@ void analizar_semantico(NodoAST *nodo) {
 
         case N_ASIGNACION: {
             /* Busca si la variable destino ya existe en la tabla de símbolos */
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            Simbolo *sym = buscar_simbolo_con_ambito(nodo->nombre_var, ambito_actual);
             if (sym == NULL) {
                 fprintf(stderr, "Error Semantico: Intento de asignacion a la variable '%s' no declarada.\n", nodo->nombre_var);
                 errores_semanticos++;
@@ -100,7 +100,7 @@ void analizar_semantico(NodoAST *nodo) {
 
         case N_VARIABLE: {
             /* Comprueba que la variable utilizada en una expresión matemática/lógica exista en el ámbito actual */
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            Simbolo *sym = buscar_simbolo_con_ambito(nodo->nombre_var, ambito_actual);
             if (sym == NULL) {
                 fprintf(stderr, "Error Semantico: La variable '%s' se esta usando pero no ha sido declarada.\n", nodo->nombre_var);
                 errores_semanticos++;
@@ -110,7 +110,7 @@ void analizar_semantico(NodoAST *nodo) {
 
         case N_LEER: {
             /* Valida que la variable pasada a la instrucción Leer() haya sido declarada previamente */
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            Simbolo *sym = buscar_simbolo_con_ambito(nodo->nombre_var, ambito_actual);
             if (sym == NULL) {
                 fprintf(stderr, "Error Semantico: La funcion Leer() intenta escribir en '%s', la cual no ha sido declarada.\n", nodo->nombre_var);
                 errores_semanticos++;
@@ -120,7 +120,7 @@ void analizar_semantico(NodoAST *nodo) {
 
         case N_LLAMADA_FUNCION: {
             /* Recupera los datos del identificador de la función que se pretende invocar */
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            Simbolo *sym = buscar_simbolo_con_ambito(nodo->nombre_var, 0);
             if (sym == NULL) {
                 fprintf(stderr, "Error Semantico: La función '%s' no ha sido declarada en el sistema.\n", nodo->nombre_var);
                 errores_semanticos++;
