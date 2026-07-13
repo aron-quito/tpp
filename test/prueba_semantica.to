@@ -1,0 +1,14 @@
+decimal nota1 = 12.5, nota2 = 5.0;
+entero edad = 20;
+
+decimal promedio = (nota1 + nota2) / 2.0;
+entero errorIntencional = promedio; // Deberia generar advertencia: asig de decimal a entero
+
+si (promedio >= 10.5) {
+    imprimir("Has aprobado");
+} sino {
+    imprimir("Has desaprobado");
+}
+
+entero noDeclarada;
+noDeclarada = variableInexistente + 5; // Error de variable no declarada

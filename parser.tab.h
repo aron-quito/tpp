@@ -122,14 +122,15 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 18 "parser.y"
+#line 20 "parser.y"
 {
     int num_entero;
     double num_decimal;
     char* cadena; /* Mapeado con yylval.cadena de tu lexer para ID y CADENA */
+    struct NodoAST* nodo;
 }
 /* Line 1529 of yacc.c.  */
-#line 133 "parser.tab.h"
+#line 134 "parser.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
