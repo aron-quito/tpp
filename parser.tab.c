@@ -1600,7 +1600,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 80 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_lista_elemento((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
+    { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 4:
@@ -1726,7 +1726,7 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 132 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_lista_elemento((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
+    { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 22:
