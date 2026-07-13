@@ -20,7 +20,7 @@ typedef struct Simbolo {
 
 /* Prototipos de las funciones de la tabla */
 void insertar_simbolo(char *nombre, TipoDato tipo, int es_funcion, int alcance);
-Simbolo* buscar_simbolo(char *nombre);
+Simbolo* buscar_simbolo_con_ambito(char *nombre, int alcance_actual);
 void imprimir_tabla();
 void liberar_tabla();
 
