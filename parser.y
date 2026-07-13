@@ -61,13 +61,21 @@
 
 %%
 
+int ejecutar_analisis_semantico(struct NodoAST *raiz);
+
 /* 1. PUNTO DE ENTRADA DE LA GRAMÁTICA */
 programa:
     lista_elementos { 
         $$ = nuevo_nodo_programa($1); // Enlace con la raíz global
         if (errores_sintacticos == 0) {
-            printf("\nAnalisis sintactico exitoso. Estructura del AST:\n"); 
-            imprimir_ast($$, 0); // Se imprimirá el árbol de forma jerárquica
+            printf("\nAnalisis sintactico exitoso. Validando logica...\n"); 
+            
+            int semantico_ok = ejecutar_analisis_semantico($$);
+            
+            if (semantico_ok) {
+                printf("\nEstructura final del AST validada:\n");
+                imprimir_ast($$, 0); // Se imprimirá el árbol de forma jerárquica
+            }
             liberar_ast($$); // Se libera la memoria del AST al finalizar
         } else {
             printf("\nAnalisis finalizado con %d error(es) sintactico(s).\n", errores_sintacticos);
