@@ -71,15 +71,21 @@ void analizar_semantico(NodoAST *nodo) {
                 TipoDato t_var = convertir_tipo(nodo->operador);
                 
                 /* Itera por la lista de variables compartidas bajo un mismo tipo base */
-                while (lista != NULL && lista->tipo == N_LISTA_IDS) {
-                    /* Registra la variable si es un identificador simple */
+                while (lista != NULL) {
+                    /* Registra si es un nodo de lista intermedio o la variable final */
                     if (lista->nombre_var) {
                         insertar_simbolo(lista->nombre_var, t_var, 0, ambito_actual);
                     }
+                    
                     /* Si la variable incluye una asignación inicial, la registra y analiza su expresión */
                     if (lista->der && lista->der->tipo == N_ASIGNACION) {
                         insertar_simbolo(lista->der->nombre_var, t_var, 0, ambito_actual);
                         analizar_semantico(lista->der->izq); 
+                    }
+                    
+                    /* Si ya no es una lista anidada, terminamos de recorrer los identificadores */
+                    if (lista->tipo != N_LISTA_IDS) {
+                        break;
                     }
                     lista = lista->izq; 
                 }
@@ -99,7 +105,7 @@ void analizar_semantico(NodoAST *nodo) {
         }
 
         case N_VARIABLE: {
-            /* Comprueba que la variable utilizada en una expresión matemática/lógica exista en el ámbito actual */
+            /* Comprueba que la variable utilizada exista en el ámbito actual o global */
             Simbolo *sym = buscar_simbolo_con_ambito(nodo->nombre_var, ambito_actual);
             if (sym == NULL) {
                 fprintf(stderr, "Error Semantico: La variable '%s' se esta usando pero no ha sido declarada.\n", nodo->nombre_var);
@@ -125,7 +131,6 @@ void analizar_semantico(NodoAST *nodo) {
                 fprintf(stderr, "Error Semantico: La función '%s' no ha sido declarada en el sistema.\n", nodo->nombre_var);
                 errores_semanticos++;
             } else if (sym->es_funcion == 0) {
-                /* Detecta errores si el usuario intenta invocar una variable como si fuera función */
                 fprintf(stderr, "Error Semantico: El identificador '%s' no es una funcion, es una variable.\n", nodo->nombre_var);
                 errores_semanticos++;
             }
@@ -135,64 +140,64 @@ void analizar_semantico(NodoAST *nodo) {
         }
 
         case N_LISTA_ARGUMENTOS:
-            /* Analiza recursivamente la secuencia de expresiones enviadas como argumentos */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->der);
             break;
 
         case N_OPERACION:
-            /* Verifica que tanto el miembro izquierdo como el derecho de la operación sean válidos */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->der);
             break;
 
         case N_SI:
-            /* Valida la expresión condicional (izq), el cuerpo afirmativo (centro) y el bloque alternativo (der) */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->centro);
             analizar_semantico(nodo->der);
             break;
 
         case N_MIENTRAS:
-            /* Analiza la condición de parada del bucle (izq) y el bloque de instrucciones interior (der) */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->der);
             break;
 
         case N_PARA:
-            /* Valida secuencialmente: inicialización (izq), condición (centro), incremento (der) y cuerpo (adicional) */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->centro);
             analizar_semantico(nodo->der);
             analizar_semantico(nodo->adicional);
             break;
 
-        case N_DEPENDE:
-            /* Analiza la variable bajo evaluación del switch (izq) y salta a la lista de casos estructurados (der) */
+        case N_DEPENDE: {
+            /* Si la estructura guarda el nombre de la variable en el nodo mismo, la validamos */
+            if (nodo->nombre_var) {
+                Simbolo *sym = buscar_simbolo_con_ambito(nodo->nombre_var, ambito_actual);
+                if (sym == NULL) {
+                    fprintf(stderr, "Error Semantico: La variable '%s' usada en el depende no ha sido declarada.\n", nodo->nombre_var);
+                    errores_semanticos++;
+                }
+            }
+            /* Analizamos la expresión condicional interna (izq) si existe, y los casos (der) */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->der);
             break;
+        }
 
         case N_LISTA_CASOS:
-            /* Recorre la cadena jerárquica de bloques "caso" asociados al depende */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->der);
             break;
 
         case N_CASO:
-            /* Valida el valor constante de comparación (izq) y las sentencias asignadas a dicho caso (der) */
             analizar_semantico(nodo->izq);
             analizar_semantico(nodo->der);
             break;
 
         case N_RETORNAR:
         case N_IMPRIMIR:
-            /* Analiza las expresiones vinculadas al retorno o a la salida estándar por pantalla */
             analizar_semantico(nodo->izq);
             break;
 
         default:
-            /* Las hojas puras (enteros, decimales, cadenas constantes) no contienen identificadores a validar */
             break;
     }
 }
