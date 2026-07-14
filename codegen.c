@@ -5,12 +5,13 @@
 #include <string.h>
 
 static int label_counter = 0;
+static char current_func_name[256] = "";
 
 static int new_label() {
     return ++label_counter;
 }
 
-// target_reg es el número de registro temporal (0 para t0, 1 para t1, ..., 6 para t6)
+static void evaluar_argumentos(NodoAST *nodo, FILE *out, int *arg_idx);
 static void traducir_expresion(NodoAST *nodo, FILE *out, int target_reg) {
     if (!nodo) return;
     
@@ -24,22 +25,16 @@ static void traducir_expresion(NodoAST *nodo, FILE *out, int target_reg) {
             fprintf(out, "    li t%d, %d\n", target_reg, nodo->val_entero);
             break;
         case N_VARIABLE: {
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
-            if (sym) {
-                fprintf(out, "    lw t%d, %d(sp)\n", target_reg, sym->direccion_memoria);
-            }
+            fprintf(out, "    lw t%d, %d(sp)\n", target_reg, nodo->val_entero);
             break;
         }
         case N_ACCESO_ARREGLO: {
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
-            if (sym) {
-                traducir_expresion(nodo->izq, out, target_reg);
-                fprintf(out, "    slli t%d, t%d, 2\n", target_reg, target_reg);
-                fprintf(out, "    li t%d, %d\n", target_reg + 1, sym->direccion_memoria);
-                fprintf(out, "    add t%d, t%d, t%d\n", target_reg, target_reg, target_reg + 1);
-                fprintf(out, "    add t%d, t%d, sp\n", target_reg, target_reg);
-                fprintf(out, "    lw t%d, 0(t%d)\n", target_reg, target_reg);
-            }
+            traducir_expresion(nodo->izq, out, target_reg);
+            fprintf(out, "    slli t%d, t%d, 2\n", target_reg, target_reg);
+            fprintf(out, "    li t%d, %d\n", target_reg + 1, nodo->val_entero);
+            fprintf(out, "    add t%d, t%d, t%d\n", target_reg, target_reg, target_reg + 1);
+            fprintf(out, "    add t%d, t%d, sp\n", target_reg, target_reg);
+            fprintf(out, "    lw t%d, 0(t%d)\n", target_reg, target_reg);
             break;
         }
         case N_OPERACION: {
@@ -84,10 +79,51 @@ static void traducir_expresion(NodoAST *nodo, FILE *out, int target_reg) {
             }
             break;
         }
+
+        case N_LLAMADA_FUNCION: {
+            char *fname = nodo->nombre_var;
+            if (strcmp(fname, "main") == 0) fname = "__user_main";
+            int arg_idx = 0;
+            evaluar_argumentos(nodo->izq, out, &arg_idx);
+            fprintf(out, "    call %s\n", fname);
+            if (target_reg != 10) { // a0 es registro 10 en RISC-V, pero nosotros lo simulamos como mv
+                fprintf(out, "    mv t%d, a0\n", target_reg);
+            }
+            break;
+        }
         case N_DECIMAL:
             // RV32I no tiene FPU. Truncamos a entero como fallback.
             fprintf(out, "    li t%d, %d # Truncado de decimal\n", target_reg, (int)nodo->val_decimal);
             break;
+    }
+}
+
+
+static void evaluar_argumentos(NodoAST *nodo, FILE *out, int *arg_idx) {
+    if (!nodo) return;
+    if (nodo->tipo == N_LISTA_ARGUMENTOS) {
+        evaluar_argumentos(nodo->izq, out, arg_idx);
+        traducir_expresion(nodo->der, out, 0); // evalúa en t0
+        fprintf(out, "    mv a%d, t0\n", *arg_idx);
+        (*arg_idx)++;
+    } else {
+        traducir_expresion(nodo, out, 0); // evalúa en t0
+        fprintf(out, "    mv a%d, t0\n", *arg_idx);
+        (*arg_idx)++;
+    }
+}
+
+static void guardar_parametros(NodoAST *nodo, FILE *out, int *arg_idx) {
+    if (!nodo) return;
+    if (nodo->tipo == N_LISTA_PARAMETROS) {
+        guardar_parametros(nodo->izq, out, arg_idx);
+        if (nodo->der && nodo->der->tipo == N_PARAMETRO) {
+            fprintf(out, "    sw a%d, %d(sp)\n", *arg_idx, nodo->der->val_entero);
+            (*arg_idx)++;
+        }
+    } else if (nodo->tipo == N_PARAMETRO) {
+        fprintf(out, "    sw a%d, %d(sp)\n", *arg_idx, nodo->val_entero);
+        (*arg_idx)++;
     }
 }
 
@@ -97,22 +133,16 @@ static void procesar_declaracion_var_codegen(NodoAST *nodo, FILE *out) {
         procesar_declaracion_var_codegen(nodo->izq, out);
         procesar_declaracion_var_codegen(nodo->der, out);
     } else if (nodo->tipo == N_ASIGNACION) {
-        Simbolo *sym = buscar_simbolo(nodo->nombre_var);
-        if (sym) {
-            traducir_expresion(nodo->izq, out, 0); // evalúa en t0
-            fprintf(out, "    sw t0, %d(sp)\n", sym->direccion_memoria);
-        }
+        traducir_expresion(nodo->izq, out, 0); // evalúa en t0
+        fprintf(out, "    sw t0, %d(sp)\n", nodo->val_entero);
     } else if (nodo->tipo == N_ASIGNACION_ARREGLO) {
-        Simbolo *sym = buscar_simbolo(nodo->nombre_var);
-        if (sym) {
-            traducir_expresion(nodo->der, out, 0); // evalúa VALOR en t0
-            traducir_expresion(nodo->izq, out, 1); // evalúa INDICE en t1
-            fprintf(out, "    slli t1, t1, 2\n");
-            fprintf(out, "    li t2, %d\n", sym->direccion_memoria);
-            fprintf(out, "    add t1, t1, t2\n");
-            fprintf(out, "    add t1, t1, sp\n");
-            fprintf(out, "    sw t0, 0(t1)\n");
-        }
+        traducir_expresion(nodo->der, out, 0); // evalúa VALOR en t0
+        traducir_expresion(nodo->izq, out, 1); // evalúa INDICE en t1
+        fprintf(out, "    slli t1, t1, 2\n");
+        fprintf(out, "    li t2, %d\n", nodo->val_entero);
+        fprintf(out, "    add t1, t1, t2\n");
+        fprintf(out, "    add t1, t1, sp\n");
+        fprintf(out, "    sw t0, 0(t1)\n");
     }
 }
 
@@ -145,6 +175,34 @@ static void procesar_lista_impresion(NodoAST *nodo, FILE *out) {
     }
 }
 
+// Forward declaration
+static void generar_nodo(NodoAST *nodo, FILE *out);
+
+// Genera todos los nodos EXCEPTO N_DECLARACION_FUN
+static void generar_nodo_sin_funciones(NodoAST *nodo, FILE *out) {
+    if (!nodo) return;
+    if (nodo->tipo == N_DECLARACION_FUN) return; // Skip
+    if (nodo->tipo == N_LISTA_ELEMENTOS || nodo->tipo == N_LISTA_PARAMETROS || nodo->tipo == N_LISTA_CASOS) {
+        generar_nodo_sin_funciones(nodo->izq, out);
+        generar_nodo_sin_funciones(nodo->der, out);
+        return;
+    }
+    generar_nodo(nodo, out);
+}
+
+// Genera SOLO los nodos N_DECLARACION_FUN
+static void generar_solo_funciones(NodoAST *nodo, FILE *out) {
+    if (!nodo) return;
+    if (nodo->tipo == N_DECLARACION_FUN) {
+        generar_nodo(nodo, out);
+        return;
+    }
+    if (nodo->tipo == N_LISTA_ELEMENTOS || nodo->tipo == N_LISTA_PARAMETROS || nodo->tipo == N_LISTA_CASOS) {
+        generar_solo_funciones(nodo->izq, out);
+        generar_solo_funciones(nodo->der, out);
+    }
+}
+
 static void generar_nodo(NodoAST *nodo, FILE *out) {
     if (!nodo) return;
 
@@ -159,13 +217,22 @@ static void generar_nodo(NodoAST *nodo, FILE *out) {
             fprintf(out, "    addi sp, sp, -%d\n", frame_size);
             fprintf(out, "    sw ra, %d(sp)\n", frame_size - 4);
             
-            generar_nodo(nodo->izq, out);
+            // Pasada 1: Generar código global (sin funciones)
+            generar_nodo_sin_funciones(nodo->izq, out);
+            
+            Simbolo *sym_main = buscar_simbolo("main");
+            if (sym_main && sym_main->categoria == SYM_FUN) {
+                fprintf(out, "    call __user_main\n");
+            }
             
             // Epílogo
             fprintf(out, "\n    lw ra, %d(sp)\n", frame_size - 4);
             fprintf(out, "    addi sp, sp, %d\n", frame_size);
             fprintf(out, ".halt_loop:\n");
             fprintf(out, "    j .halt_loop\n\n");
+            
+            // Pasada 2: Generar funciones DESPUÉS de main
+            generar_solo_funciones(nodo->izq, out);
             break;
         }
 
@@ -176,32 +243,69 @@ static void generar_nodo(NodoAST *nodo, FILE *out) {
             generar_nodo(nodo->der, out);
             break;
 
+
+        case N_DECLARACION_FUN: {
+            char *fname = nodo->nombre_var;
+            if (strcmp(fname, "main") == 0) fname = "__user_main";
+            
+            // Guardar nombre actual para que N_RETORNAR sepa a dónde saltar
+            strncpy(current_func_name, fname, 255);
+            
+            fprintf(out, "\n    .globl %s\n", fname);
+            fprintf(out, "%s:\n", fname);
+            
+            // Prologue: Save ra
+            fprintf(out, "    sw ra, %d(sp)\n", nodo->val_entero);
+            
+            // Move args from a0-a7 into memory
+            int arg_idx = 0;
+            guardar_parametros(nodo->izq, out, &arg_idx);
+            
+            // Body
+            generar_nodo(nodo->der, out);
+            
+            // Epilogue
+            fprintf(out, ".L_end_%s:\n", fname);
+            fprintf(out, "    lw ra, %d(sp)\n", nodo->val_entero);
+            fprintf(out, "    ret\n");
+            break;
+        }
+
+        case N_LLAMADA_FUNCION: {
+            char *fname = nodo->nombre_var;
+            if (strcmp(fname, "main") == 0) fname = "__user_main";
+            int arg_idx = 0;
+            evaluar_argumentos(nodo->izq, out, &arg_idx);
+            fprintf(out, "    call %s\n", fname);
+            break;
+        }
+
+        case N_RETORNAR: {
+            traducir_expresion(nodo->izq, out, 0); // result in t0
+            fprintf(out, "    mv a0, t0\n");
+            fprintf(out, "    j .L_end_%s\n", current_func_name);
+            break;
+        }
+
         case N_DECLARACION_VAR:
             procesar_declaracion_var_codegen(nodo->izq, out);
             break;
             
         case N_ASIGNACION: {
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
-            if (sym) {
-                traducir_expresion(nodo->izq, out, 0); // evalúa en t0
-                fprintf(out, "    sw t0, %d(sp)\n", sym->direccion_memoria);
-            }
+            traducir_expresion(nodo->izq, out, 0); // evalúa en t0
+            fprintf(out, "    sw t0, %d(sp)\n", nodo->val_entero);
             break;
         }
 
         case N_ASIGNACION_ARREGLO: {
             // nodo->izq es el ID del indice, nodo->der es el valor (en ast.c y semantic.c)
-            // Wait, ast.c: nodo->nombre_var = nombre, nodo->izq = indice, nodo->der = expresion
-            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
-            if (sym) {
-                traducir_expresion(nodo->der, out, 0); // evalúa VALOR en t0
-                traducir_expresion(nodo->izq, out, 1); // evalúa INDICE en t1
-                fprintf(out, "    slli t1, t1, 2\n");
-                fprintf(out, "    li t2, %d\n", sym->direccion_memoria);
-                fprintf(out, "    add t1, t1, t2\n");
-                fprintf(out, "    add t1, t1, sp\n");
-                fprintf(out, "    sw t0, 0(t1)\n");
-            }
+            traducir_expresion(nodo->der, out, 0); // evalúa VALOR en t0
+            traducir_expresion(nodo->izq, out, 1); // evalúa INDICE en t1
+            fprintf(out, "    slli t1, t1, 2\n");
+            fprintf(out, "    li t2, %d\n", nodo->val_entero);
+            fprintf(out, "    add t1, t1, t2\n");
+            fprintf(out, "    add t1, t1, sp\n");
+            fprintf(out, "    sw t0, 0(t1)\n");
             break;
         }
         

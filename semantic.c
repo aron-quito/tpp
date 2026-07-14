@@ -95,7 +95,10 @@ static void procesar_declaracion_var(NodoAST *nodo, int tipo_var) {
     } else if (nodo->tipo == N_VARIABLE) {
         insertar_simbolo(nodo->nombre_var, SYM_VAR, tipo_var, ambito_actual, 1);
     } else if (nodo->tipo == N_ASIGNACION) {
-        insertar_simbolo(nodo->nombre_var, SYM_VAR, tipo_var, ambito_actual, 1);
+        Simbolo *sym = insertar_simbolo(nodo->nombre_var, SYM_VAR, tipo_var, ambito_actual, 1);
+        if (sym) {
+            nodo->val_entero = sym->direccion_memoria; // Guardar dirección para codegen
+        }
         
         // Verificación de tipos para la inicialización
         int tipo_expr = obtener_tipo_expresion(nodo->izq);
@@ -222,6 +225,18 @@ static void visitar_nodo(NodoAST *nodo) {
             } else {
                 nodo->val_entero = sym->direccion_memoria;
             }
+            break;
+        }
+
+        case N_ACCESO_ARREGLO: {
+            // Resuelve base del arreglo y dirección del índice para codegen
+            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            if (sym && sym->categoria == SYM_VAR) {
+                nodo->val_entero = sym->direccion_memoria;
+            } else if (!sym) {
+                reportar_error("Arreglo no declarado:", nodo->nombre_var);
+            }
+            visitar_nodo(nodo->izq); // Resolver dirección del índice
             break;
         }
 

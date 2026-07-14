@@ -1,10 +1,15 @@
-fun sumar(entero a, entero b) -> entero {
-    retornar a + b;
+entero a = 10;
+entero c = 20;
+
+fun duplicar(entero x) -> entero {
+    entero res;
+    res = x + c;
+    retornar res;
 }
 
-fun main() {
-    entero resultado;
-    resultado = sumar(10, 20);
-    imprimir("Suma 10+20 = ");
-    imprimir(resultado);
+fun main(){
+    entero b;
+    b = duplicar(a);
+    imprimir("Doble = ");
+    imprimir(b);
 }

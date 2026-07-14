@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ir.h"
 
 static int temp_counter = 0;
@@ -29,6 +30,39 @@ static int generar_ir(NodoAST *nodo) {
             generar_ir(nodo->der);
             break;
 
+
+        case N_DECLARACION_FUN: {
+            char *fname = nodo->nombre_var;
+            if (strcmp(fname, "main") == 0) fname = "__user_main";
+            printf("fun %s:\n", fname);
+            // Params
+            generar_ir(nodo->izq);
+            // Body
+            generar_ir(nodo->der);
+            printf("end_fun %s\n", fname);
+            break;
+        }
+
+        case N_LLAMADA_FUNCION: {
+            // Args
+            generar_ir(nodo->izq);
+            char *fname = nodo->nombre_var;
+            if (strcmp(fname, "main") == 0) fname = "__user_main";
+            printf("call %s\n", fname);
+            break;
+        }
+
+        case N_RETORNAR: {
+            generar_ir(nodo->izq);
+            printf("ret\n");
+            break;
+        }
+
+        case N_PARAMETRO: {
+            printf("param %s\n", nodo->nombre_var);
+            break;
+        }
+        
         case N_DECLARACION_VAR:
             generar_ir(nodo->izq); // El nodo asignación
             break;
