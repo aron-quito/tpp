@@ -1,0 +1,27 @@
+entero claveSecreta = 1945;
+entero intentoActual = 1930;
+entero decodificado = 0;
+
+imprimir("Iniciando maquina Bombe...");
+imprimir("Interceptando mensajes cifrados de Enigma...");
+
+mientras (intentoActual < 2000) {
+    si (intentoActual == claveSecreta) {
+        decodificado = 1;
+        intentoActual = 2000; // Forzamos la salida del bucle (break manual)
+    } sino {
+        intentoActual = intentoActual + 1;
+    }
+}
+
+si (decodificado == 1) {
+    imprimir("¡CLAVE ENCONTRADA EN LOS ROTORES!");
+    imprimir("Configurando posiciones iniciales...");
+    imprimir("Traduciendo texto cifrado...");
+    imprimir("..............................");
+    imprimir("MENSAJE ALTO MANDO ALEMAN:");
+    imprimir("El desembarco es en Normandia.");
+    imprimir("HEIL HITLER");
+} sino {
+    imprimir("Error: Imposible romper la clave del dia.");
+}

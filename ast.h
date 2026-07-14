@@ -11,6 +11,9 @@ typedef enum {
   N_OPERACION,
   N_ASIGNACION,
   N_DECLARACION_VAR,
+  N_DECLARACION_ARREGLO,
+  N_ACCESO_ARREGLO,
+  N_ASIGNACION_ARREGLO,
   N_LISTA_IDS,
   N_IMPRIMIR,
   N_LEER,
@@ -58,6 +61,9 @@ NodoAST *nuevo_nodo_variable(char *nombre);
 NodoAST *nuevo_nodo_cadena(char *cadena);
 NodoAST *nuevo_nodo_operacion(int operador, NodoAST *izq, NodoAST *der);
 NodoAST *nuevo_nodo_asignacion(char *nombre_var, NodoAST *expresion);
+NodoAST *nuevo_nodo_declaracion_arreglo(char *nombre_var, int tamanio);
+NodoAST *nuevo_nodo_acceso_arreglo(char *nombre_var, NodoAST *indice);
+NodoAST *nuevo_nodo_asignacion_arreglo(char *nombre_var, NodoAST *indice, NodoAST *expresion);
 NodoAST *nuevo_nodo_declaracion_var(int tipo, NodoAST *lista_ids);
 NodoAST *nuevo_nodo_lista_ids(NodoAST *lista, char *id);
 NodoAST *nuevo_nodo_imprimir(NodoAST *lista_impresion);

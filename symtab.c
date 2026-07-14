@@ -12,7 +12,7 @@ void inicializar_symtab() {
     mem_disponible = 0;
 }
 
-Simbolo* insertar_simbolo(char *nombre, CategoriaSimbolo cat, int tipo, int ambito) {
+Simbolo* insertar_simbolo(char *nombre, CategoriaSimbolo cat, int tipo, int ambito, int tamanio) {
     if (buscar_simbolo(nombre) != NULL && cat == SYM_VAR) { // Simplificacion para el ambito global/local
         Simbolo *existente = tabla_simbolos;
         while(existente) {
@@ -31,10 +31,11 @@ Simbolo* insertar_simbolo(char *nombre, CategoriaSimbolo cat, int tipo, int ambi
     nuevo->num_params = 0;
     nuevo->tipos_params = NULL;
     nuevo->ambito = ambito;
+    nuevo->tamanio = tamanio;
     
     if (cat == SYM_VAR) {
         nuevo->direccion_memoria = mem_disponible;
-        mem_disponible += 4;
+        mem_disponible += 4 * tamanio;
     } else {
         nuevo->direccion_memoria = 0;
     }

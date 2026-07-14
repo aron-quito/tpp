@@ -1,0 +1,10 @@
+fun sumar(entero a, entero b) -> entero {
+    retornar a + b;
+}
+
+fun main() {
+    entero resultado;
+    resultado = sumar(10, 20);
+    imprimir("Suma 10+20 = ");
+    imprimir(resultado);
+}

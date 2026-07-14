@@ -1,0 +1,27 @@
+// Una prueba sencilla con arreglos, bucles e impresion
+
+entero arr[5];
+
+// Inicializamos los valores
+arr[0] = 10;
+arr[1] = 20;
+arr[2] = 30;
+arr[3] = 40;
+arr[4] = 50;
+
+entero i;
+i = 0;
+
+entero suma;
+suma = 0;
+
+imprimir("--- VALORES DEL ARREGLO ---");
+
+mientras (i < 5) {
+    imprimir(arr[i]);
+    suma = suma + arr[i];
+    i = i + 1;
+}
+
+imprimir("--- SUMA TOTAL ---");
+imprimir(suma);

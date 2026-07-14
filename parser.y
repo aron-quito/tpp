@@ -45,7 +45,7 @@
 %token IGUAL MENOR MAYOR MENOR_IGUAL MAYOR_IGUAL DIFERENTE FLECHA
 
 /* Símbolos de agrupación y puntuación */
-%token PARI PARD LLAVEI LLAVED PUNTOCOMA COMA DOS_PUNTOS
+%token PARI PARD LLAVEI LLAVED CORCHETEI CORCHETED PUNTOCOMA COMA DOS_PUNTOS
 
 /* Precedencia y asociatividad de operadores para resolver ambigüedades matemáticas y lógicas */
 %left IGUAL DIFERENTE MENOR MAYOR MENOR_IGUAL MAYOR_IGUAL
@@ -169,6 +169,7 @@ lista_ids:
 declarador:
     ID                  { $$ = nuevo_nodo_variable($1); free($1); }
     | ID ASIG expresion { $$ = nuevo_nodo_asignacion($1, $3); free($1); }
+    | ID CORCHETEI NUM_ENTERO CORCHETED { $$ = nuevo_nodo_declaracion_arreglo($1, $3); free($1); }
     ;
 
 /* 3. BLOQUES DE CÓDIGO E INSTRUCCIONES ATÓMICAS */
@@ -180,6 +181,7 @@ bloque_instrucciones:
 instruccion:
     declaracion_var PUNTOCOMA                      { $$ = $1; }
     | ID ASIG expresion PUNTOCOMA                  { $$ = nuevo_nodo_asignacion($1, $3); free($1); }
+    | ID CORCHETEI expresion CORCHETED ASIG expresion PUNTOCOMA { $$ = nuevo_nodo_asignacion_arreglo($1, $3, $6); free($1); }
     | IMPRIMIR PARI lista_impresion PARD PUNTOCOMA { $$ = nuevo_nodo_imprimir($3); }
     | LEER PARI ID PARD PUNTOCOMA                  { $$ = nuevo_nodo_leer($3); free($3); }
     | RETORNAR expresion PUNTOCOMA                 { $$ = nuevo_nodo_retornar($2); }
@@ -261,6 +263,7 @@ expresion:
     | expresion DIFERENTE expresion   { $$ = nuevo_nodo_operacion(DIFERENTE, $1, $3); }
     | PARI expresion PARD             { $$ = $2; }
     | ID                              { $$ = nuevo_nodo_variable($1); free($1); }
+    | ID CORCHETEI expresion CORCHETED { $$ = nuevo_nodo_acceso_arreglo($1, $3); free($1); }
     | llamada_funcion                 { $$ = $1; }
     | NUM_ENTERO                      { $$ = nuevo_nodo_entero($1); }
     | NUM_DECIMAL                     { $$ = nuevo_nodo_decimal($1); }

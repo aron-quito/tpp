@@ -72,10 +72,12 @@
      PARD = 288,
      LLAVEI = 289,
      LLAVED = 290,
-     PUNTOCOMA = 291,
-     COMA = 292,
-     DOS_PUNTOS = 293,
-     LOWER_THAN_SINO = 294
+     CORCHETEI = 291,
+     CORCHETED = 292,
+     PUNTOCOMA = 293,
+     COMA = 294,
+     DOS_PUNTOS = 295,
+     LOWER_THAN_SINO = 296
    };
 #endif
 /* Tokens.  */
@@ -112,10 +114,12 @@
 #define PARD 288
 #define LLAVEI 289
 #define LLAVED 290
-#define PUNTOCOMA 291
-#define COMA 292
-#define DOS_PUNTOS 293
-#define LOWER_THAN_SINO 294
+#define CORCHETEI 291
+#define CORCHETED 292
+#define PUNTOCOMA 293
+#define COMA 294
+#define DOS_PUNTOS 295
+#define LOWER_THAN_SINO 296
 
 
 
@@ -130,7 +134,7 @@ typedef union YYSTYPE
     struct NodoAST* nodo;
 }
 /* Line 1529 of yacc.c.  */
-#line 134 "parser.tab.h"
+#line 138 "parser.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

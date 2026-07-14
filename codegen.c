@@ -30,6 +30,18 @@ static void traducir_expresion(NodoAST *nodo, FILE *out, int target_reg) {
             }
             break;
         }
+        case N_ACCESO_ARREGLO: {
+            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            if (sym) {
+                traducir_expresion(nodo->izq, out, target_reg);
+                fprintf(out, "    slli t%d, t%d, 2\n", target_reg, target_reg);
+                fprintf(out, "    li t%d, %d\n", target_reg + 1, sym->direccion_memoria);
+                fprintf(out, "    add t%d, t%d, t%d\n", target_reg, target_reg, target_reg + 1);
+                fprintf(out, "    add t%d, t%d, sp\n", target_reg, target_reg);
+                fprintf(out, "    lw t%d, 0(t%d)\n", target_reg, target_reg);
+            }
+            break;
+        }
         case N_OPERACION: {
             traducir_expresion(nodo->izq, out, target_reg);
             traducir_expresion(nodo->der, out, target_reg + 1);
@@ -89,6 +101,17 @@ static void procesar_declaracion_var_codegen(NodoAST *nodo, FILE *out) {
         if (sym) {
             traducir_expresion(nodo->izq, out, 0); // evalúa en t0
             fprintf(out, "    sw t0, %d(sp)\n", sym->direccion_memoria);
+        }
+    } else if (nodo->tipo == N_ASIGNACION_ARREGLO) {
+        Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+        if (sym) {
+            traducir_expresion(nodo->der, out, 0); // evalúa VALOR en t0
+            traducir_expresion(nodo->izq, out, 1); // evalúa INDICE en t1
+            fprintf(out, "    slli t1, t1, 2\n");
+            fprintf(out, "    li t2, %d\n", sym->direccion_memoria);
+            fprintf(out, "    add t1, t1, t2\n");
+            fprintf(out, "    add t1, t1, sp\n");
+            fprintf(out, "    sw t0, 0(t1)\n");
         }
     }
 }
@@ -162,6 +185,22 @@ static void generar_nodo(NodoAST *nodo, FILE *out) {
             if (sym) {
                 traducir_expresion(nodo->izq, out, 0); // evalúa en t0
                 fprintf(out, "    sw t0, %d(sp)\n", sym->direccion_memoria);
+            }
+            break;
+        }
+
+        case N_ASIGNACION_ARREGLO: {
+            // nodo->izq es el ID del indice, nodo->der es el valor (en ast.c y semantic.c)
+            // Wait, ast.c: nodo->nombre_var = nombre, nodo->izq = indice, nodo->der = expresion
+            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            if (sym) {
+                traducir_expresion(nodo->der, out, 0); // evalúa VALOR en t0
+                traducir_expresion(nodo->izq, out, 1); // evalúa INDICE en t1
+                fprintf(out, "    slli t1, t1, 2\n");
+                fprintf(out, "    li t2, %d\n", sym->direccion_memoria);
+                fprintf(out, "    add t1, t1, t2\n");
+                fprintf(out, "    add t1, t1, sp\n");
+                fprintf(out, "    sw t0, 0(t1)\n");
             }
             break;
         }

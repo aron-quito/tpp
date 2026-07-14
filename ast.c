@@ -72,6 +72,28 @@ NodoAST *nuevo_nodo_asignacion(char *nombre_var, NodoAST *expresion) {
   return nodo;
 }
 
+NodoAST *nuevo_nodo_declaracion_arreglo(char *nombre_var, int tamanio) {
+  NodoAST *nodo = crear_nodo(N_DECLARACION_ARREGLO);
+  nodo->nombre_var = strdup(nombre_var);
+  nodo->val_entero = tamanio;
+  return nodo;
+}
+
+NodoAST *nuevo_nodo_acceso_arreglo(char *nombre_var, NodoAST *indice) {
+  NodoAST *nodo = crear_nodo(N_ACCESO_ARREGLO);
+  nodo->nombre_var = strdup(nombre_var);
+  nodo->izq = indice;
+  return nodo;
+}
+
+NodoAST *nuevo_nodo_asignacion_arreglo(char *nombre_var, NodoAST *indice, NodoAST *expresion) {
+  NodoAST *nodo = crear_nodo(N_ASIGNACION_ARREGLO);
+  nodo->nombre_var = strdup(nombre_var);
+  nodo->izq = indice;
+  nodo->der = expresion;
+  return nodo;
+}
+
 // Crea un nodo para una declaración de variables
 NodoAST *nuevo_nodo_declaracion_var(int tipo, NodoAST *lista_ids) {
   NodoAST *nodo = crear_nodo(N_DECLARACION_VAR);
@@ -291,6 +313,20 @@ void imprimir_ast(NodoAST *nodo, int esp) {
   case N_ASIGNACION:
     printf("[Asignacion] a variable '%s'\n", nodo->nombre_var);
     imprimir_ast(nodo->izq, esp + 1);
+    break;
+  case N_DECLARACION_ARREGLO:
+    printf("[Declaracion Arreglo] %s[%d]\n", nodo->nombre_var, nodo->val_entero);
+    break;
+  case N_ACCESO_ARREGLO:
+    printf("[Acceso Arreglo] %s\n", nodo->nombre_var);
+    imprimir_ast(nodo->izq, esp + 1);
+    break;
+  case N_ASIGNACION_ARREGLO:
+    printf("[Asignacion Arreglo] %s\n", nodo->nombre_var);
+    printf("  [Indice]:\n");
+    imprimir_ast(nodo->izq, esp + 2);
+    printf("  [Valor]:\n");
+    imprimir_ast(nodo->der, esp + 2);
     break;
   case N_DECLARACION_VAR:
     printf("[Declaracion Var] Tipo: '%s'\n",

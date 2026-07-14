@@ -45,6 +45,13 @@ static int generar_ir(NodoAST *nodo) {
             return t;
         }
 
+        case N_ACCESO_ARREGLO: {
+            int idx_t = generar_ir(nodo->izq);
+            int res_t = new_temp();
+            printf("    t%d = %s[t%d]\n", res_t, nodo->nombre_var, idx_t);
+            return res_t;
+        }
+
         case N_OPERACION: {
             int t1 = generar_ir(nodo->izq);
             int t2 = generar_ir(nodo->der);
@@ -56,6 +63,13 @@ static int generar_ir(NodoAST *nodo) {
         case N_ASIGNACION: {
             int t1 = generar_ir(nodo->izq);
             printf("    %s = t%d\n", nodo->nombre_var, t1);
+            break;
+        }
+
+        case N_ASIGNACION_ARREGLO: {
+            int t1 = generar_ir(nodo->der); // valor
+            int t2 = generar_ir(nodo->izq); // indice
+            printf("    %s[t%d] = t%d\n", nodo->nombre_var, t2, t1);
             break;
         }
 

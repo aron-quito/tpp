@@ -72,6 +72,8 @@ LETRA  [a-zA-Z]
 ")"                  { return PARD; }
 "{"                  { return LLAVEI; }
 "}"                  { return LLAVED; }
+"["                  { return CORCHETEI; }
+"]"                  { return CORCHETED; }
 ";"                  { return PUNTOCOMA; }
 ","                  { return COMA; }
 ":"                  { return DOS_PUNTOS; }
