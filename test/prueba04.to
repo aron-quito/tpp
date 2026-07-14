@@ -1,0 +1,4 @@
+// Se intenta usar una variable que no fue declarada
+entero x = 5;
+entero resultado = x + y ; // ERROR : ’y ’ no declarada
+imprimir ( resultado ) ; 

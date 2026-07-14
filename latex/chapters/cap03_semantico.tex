@@ -1,0 +1,202 @@
+% ─── Capítulo 3: Analizador Semántico ─────────────────────────────────────────
+\chapter{FRONTEND — Análisis Semántico y Tabla de Símbolos}
+
+\section{Fundamentos Teóricos}
+
+Mientras que el analizador sintáctico asegura que el código está escrito correctamente según las reglas gramaticales, el \textbf{analizador semántico} verifica que el programa tenga un significado lógico y consistente. 
+
+Teóricamente, el análisis semántico se ocupa de hacer cumplir reglas dependientes del contexto (Sensibles al Contexto), las cuales no pueden ser expresadas en una Gramática Libre de Contexto. Sus dos responsabilidades principales son:
+\begin{itemize}
+    \item \textbf{Gestión de Entornos (Scoping):} Garantizar que las variables y funciones sean declaradas antes de ser usadas, respetando sus ámbitos de visibilidad (variables globales vs. locales).
+    \item \textbf{Sistema de Tipos (Type Checking):} Asegurar que las operaciones se apliquen a operandos compatibles (e.g., no sumar un arreglo con un decimal) y que los valores de retorno de funciones coincidan con sus firmas.
+\end{itemize}
+
+\begin{infobox}[El rol de la Tabla de Símbolos]
+La \textbf{Tabla de Símbolos} es la estructura de datos principal utilizada en esta fase. Funciona como un diccionario dinámico que mapea identificadores (nombres de variables o funciones) a sus atributos lógicos (tipo, tamaño, ámbito y dirección en memoria).
+\end{infobox}
+
+Adicionalmente, en el compilador TPP, esta fase calcula y almacena estáticamente las \textbf{direcciones de memoria absolutas y relativas} directamente en los nodos del AST, liberando al generador de código de la carga de gestionar variables.
+
+\section{Tabla de Símbolos: \texttt{symtab.c}}
+
+\subsection{Estructura del Símbolo}
+
+Cada símbolo en la tabla tiene la siguiente estructura:
+
+\begin{lstlisting}[style=cstyle, caption={Estructura Simbolo en symtab.h}]
+typedef enum {
+    SYM_VAR,   // Variable o arreglo
+    SYM_FUN    // Función
+} CategoriaSimbolo;
+
+typedef struct Simbolo {
+    char *nombre;                 // Nombre del identificador
+    CategoriaSimbolo categoria;   // Variable o Función
+    int tipo;                     // TIPO_ENTERO (268), TIPO_DECIMAL (269), 0 (void)
+    int num_params;               // Cantidad de parámetros (funciones)
+    int *tipos_params;            // Tipos de parámetros (funciones)
+    int ambito;                   // 0 = global, 1,2,3... = local
+    int tamanio;                  // 1 para escalares, N para arreglos de N elem.
+    unsigned int direccion_memoria; // Dirección en RAM (offset desde sp)
+    struct Simbolo *sig;          // Lista enlazada
+} Simbolo;
+\end{lstlisting}
+
+\subsection{Gestión de Memoria}
+
+La tabla de símbolos implementa un modelo de memoria lineal creciente. Cada nueva variable recibe un offset consecutivo desde la posición 0:
+
+\begin{lstlisting}[style=cstyle, caption={Asignación de memoria en insertar\_simbolo()}]
+static unsigned int mem_disponible = 0;
+
+Simbolo* insertar_simbolo(char *nombre, CategoriaSimbolo cat, 
+                           int tipo, int ambito, int tamanio) {
+    Simbolo *nuevo = malloc(sizeof(Simbolo));
+    // ...configurar campos...
+    
+    if (cat == SYM_VAR) {
+        nuevo->direccion_memoria = mem_disponible;
+        mem_disponible += 4 * tamanio; // Cada word = 4 bytes
+    } else {
+        nuevo->direccion_memoria = 0;  // Funciones no ocupan RAM
+    }
+    
+    nuevo->sig = tabla_simbolos; // Inserción al frente (LIFO)
+    tabla_simbolos = nuevo;
+    return nuevo;
+}
+\end{lstlisting}
+
+\begin{notebox}
+Las variables y arreglos se almacenan en el stack (\texttt{sp + offset}). Un arreglo \texttt{entero arr[5]} reserva $5 \times 4 = 20$ bytes consecutivos a partir de su dirección base.
+\end{notebox}
+
+\subsection{Scoping y Eliminación de Ámbitos}
+
+El compilador implementa ámbitos anidados mediante un contador \texttt{ambito\_actual}. Cuando se sale de una función o bloque, se eliminan los símbolos de ese ámbito de la tabla (pero sus direcciones de memoria ya están grabadas en el AST):
+
+\begin{lstlisting}[style=cstyle, caption={Eliminación de ámbito al salir de función}]
+case N_DECLARACION_FUN: {
+    insertar_simbolo(nodo->nombre_var, SYM_FUN, ...);
+    
+    // Reservar espacio para guardar 'ra' (return address)
+    Simbolo *ra_sym = insertar_simbolo(".ra_nombre", SYM_VAR, ...);
+    nodo->val_entero = ra_sym->direccion_memoria; // Para el prólogo
+    
+    ambito_actual++;              // Nuevo ámbito
+    visitar_nodo(nodo->izq);     // Parametros
+    visitar_nodo(nodo->der);     // Cuerpo
+    
+    eliminar_ambito(ambito_actual); // Limpia variables locales
+    ambito_actual--;
+}
+\end{lstlisting}
+
+\section{Implementación: \texttt{semantic.c}}
+
+\subsection{Anotación de Nodos del AST}
+
+La función \texttt{visitar\_nodo()} recorre el AST anotando cada nodo con su dirección de memoria. Este proceso es crítico porque permite al backend trabajar sin tabla de símbolos:
+
+\begin{lstlisting}[style=cstyle, caption={Anotación de variables en el AST}]
+case N_VARIABLE: {
+    Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+    if (!sym || sym->categoria != SYM_VAR) {
+        reportar_error("Uso de variable no declarada:", nodo->nombre_var);
+    } else {
+        // *** Clave: grabar la dirección en el nodo para codegen ***
+        nodo->val_entero = sym->direccion_memoria;
+    }
+    break;
+}
+
+case N_ASIGNACION: {
+    Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+    if (sym) {
+        nodo->val_entero = sym->direccion_memoria; // Para codegen
+        // ...verificación de tipos...
+    }
+    visitar_nodo(nodo->izq);
+    break;
+}
+
+case N_ACCESO_ARREGLO: {
+    Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+    if (sym) {
+        nodo->val_entero = sym->direccion_memoria; // base del arreglo
+    }
+    visitar_nodo(nodo->izq); // Resolver también el índice
+    break;
+}
+\end{lstlisting}
+
+\subsection{Verificación de Tipos}
+
+\begin{lstlisting}[style=cstyle, caption={Verificación de tipos en expresiones}]
+static int obtener_tipo_expresion(NodoAST *nodo) {
+    switch (nodo->tipo) {
+        case N_ENTERO:  return TIPO_ENTERO;
+        case N_DECIMAL: return TIPO_DECIMAL;
+        case N_VARIABLE: {
+            Simbolo *sym = buscar_simbolo(nodo->nombre_var);
+            if (sym) {
+                nodo->val_entero = sym->direccion_memoria;
+                return sym->tipo;
+            }
+            // ...error si no encontrado...
+        }
+        case N_OPERACION: {
+            int tipo_izq = obtener_tipo_expresion(nodo->izq);
+            int tipo_der = obtener_tipo_expresion(nodo->der);
+            // Si alguno es decimal, el resultado es decimal
+            if (tipo_izq == TIPO_DECIMAL || tipo_der == TIPO_DECIMAL) 
+                return TIPO_DECIMAL;
+            return TIPO_ENTERO;
+        }
+    }
+}
+\end{lstlisting}
+
+\section{Errores Semánticos Detectados}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Error} & \textbf{Ejemplo} & \textbf{Mensaje} \\
+\midrule
+Variable no declarada & \texttt{x = y + 1;} (y sin declarar) & Error: Variable no declarada \\
+Redefinición de símbolo & \texttt{entero x; entero x;} & Error: Redefinición del símbolo \\
+Uso no-variable & \texttt{fun() = 5;} & Error: No es una variable \\
+Función no declarada & \texttt{z = foo(1);} (foo sin definir) & Error: Función no declarada \\
+Tipo de índice & \texttt{arr[3.14];} & Error: Índice debe ser entero \\
+\bottomrule
+\end{tabular}
+\caption{Errores semánticos detectados por el compilador}
+\label{tab:errores-semanticos}
+\end{table}
+
+\section{Visualización de la Tabla de Símbolos}
+
+Al final del análisis semántico, el compilador imprime la tabla de símbolos en pantalla con información legible:
+
+\begin{verbatim}
+==================== TABLA DE SIMBOLOS ====================
+Nombre               Categoria  Tipo       Ambito   Tam      Memoria
+----------------------------------------------------------------------
+.ra_main             Variable   entero     0        1        0x00000014
+main                 Funcion    ninguno    0        -        0x00000000
+.ra_duplicar         Variable   entero     0        1        0x00000008
+duplicar             Funcion    entero     0        -        0x00000000
+c                    Variable   entero     0        1        0x00000004
+a                    Variable   entero     0        1        0x00000000
+----------------------------------------------------------------------
+Total: 6 simbolos | Memoria usada: 28 bytes (7 words)
+======================================================================
+\end{verbatim}
+
+\begin{itemize}
+    \item Las entradas \texttt{.ra\_nombre} son slots de memoria reservados para guardar el \texttt{ra} (return address) de cada función.
+    \item \textbf{Tam} muestra \texttt{[N]} para arreglos de N elementos.
+    \item \textbf{Memoria} es el offset desde el base del stack \texttt{sp}.
+\end{itemize}

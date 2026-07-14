@@ -1,0 +1,179 @@
+% ─── Capítulo 6: Código Intermedio ────────────────────────────────────────────
+\chapter{BACKEND — Código Intermedio (TAC)}
+
+\section{Fundamentos Teóricos}
+
+Una vez que el AST ha sido optimizado, el compilador necesita traducirlo a una forma más lineal que pueda ser procesada por fases sucesivas o por distintos backends. Esta forma intermedia es el \textbf{Código de Tres Direcciones (TAC, \textit{Three-Address Code})}.
+
+Teóricamente, el TAC modela un tipo de máquina abstracta llamada \textbf{Máquina de Registros Infinitos}: tiene una cantidad ilimitada de variables temporales (\texttt{t0}, \texttt{t1}, \texttt{t2}...) que actúan como registros de cómputo. Esto permite \textit{linearizar} cualquier expresión anidada del AST sin tener que preocuparse aún por la limitación de registros físicos de la CPU real.
+
+Cada instrucción TAC puede expresarse formalmente como una \textbf{cuádrupla}:
+\[ (\mathrm{op},\, \mathrm{arg_1},\, \mathrm{arg_2},\, \mathrm{result}) \]
+Por ejemplo:
+\begin{itemize}
+    \item \texttt{t2 = t0 + t1} → $(\texttt{+},\; \texttt{t0},\; \texttt{t1},\; \texttt{t2})$
+    \item \texttt{if\_false t2 goto L1} → $(\texttt{if\_false},\; \texttt{t2},\; \texttt{L1},\; -)$
+    \item \texttt{call duplicar} → $(\texttt{call},\; \texttt{duplicar},\; -,\; -)$
+\end{itemize}
+
+\begin{infobox}[¿Por qué es necesario el Código Intermedio?]
+El TAC es un nivel de abstracción fundamental porque:
+\begin{enumerate}
+    \item \textbf{Portabilidad:} Al ser independiente de la arquitectura (x86, ARM, RISC-V), el mismo TAC puede ser reutilizado para generar código para distintos procesadores simplemente intercambiando el backend.
+    \item \textbf{Diagnóstico:} Permite al programador o al docente leer y comprender qué operaciones realiza el compilador antes de sumergirse en el ensamblador.
+    \item \textbf{Base para optimizaciones posteriores:} Técnicas avanzadas como la Asignación Global de Registros (GRA), el Análisis de Flujo de Datos y la Eliminación de Subexpresiones Comunes (CSE) operan sobre formas de TAC o SSA.
+\end{enumerate}
+\end{infobox}
+
+\begin{notebox}
+En el compilador TPP, el código intermedio tiene propósito \textbf{diagnóstico y educativo}. No produce un archivo de salida propio; el TAC se imprime en pantalla para que el programador pueda entender cómo el compilador «ve» el programa antes de generar el ensamblador final.
+\end{notebox}
+
+\section{Implementación: \texttt{ir.c}}
+
+\subsection{Formato TAC}
+
+Cada instrucción TAC sigue uno de estos formatos:
+
+\begin{verbatim}
+t0 = 10               // Asignacion de constante a temporal
+t1 = t0 + t2          // Operacion binaria
+x = t1                // Asignacion a variable
+arr[t1] = t0          // Escritura en arreglo
+t0 = arr[t1]          // Lectura de arreglo
+t0 = x < 5            // Comparacion
+if t0 goto L1         // Salto condicional
+goto L2               // Salto incondicional
+L1:                   // Etiqueta
+call nombre_fun       // Llamada a función
+ret                   // Retorno
+print "texto"         // Impresión de cadena
+print t0              // Impresión de variable
+\end{verbatim}
+
+\subsection{Generador Recursivo}
+
+\begin{lstlisting}[style=cstyle, caption={Generación de TAC recursiva en ir.c}]
+static int contador_temp = 0;
+static int contador_etiq = 0;
+
+void generar_tac(NodoAST *nodo) {
+    if (!nodo) return;
+
+    switch (nodo->tipo) {
+        case N_ENTERO:
+            printf("    t%d = %d\n", contador_temp++, nodo->val_entero);
+            break;
+
+        case N_VARIABLE:
+            printf("    t%d = %s\n", contador_temp++, nodo->nombre_var);
+            break;
+
+        case N_OPERACION: {
+            generar_tac(nodo->izq);
+            int temp_izq = contador_temp - 1;
+            generar_tac(nodo->der);
+            int temp_der = contador_temp - 1;
+            const char *op = obtener_nombre_operador(nodo->operador);
+            printf("    t%d = t%d %s t%d\n", 
+                   contador_temp++, temp_izq, op, temp_der);
+            break;
+        }
+
+        case N_MIENTRAS: {
+            int etiq_inicio = contador_etiq++;
+            int etiq_fin = contador_etiq++;
+            printf("L%d:\n", etiq_inicio);
+            generar_tac(nodo->izq);  // Condicion
+            printf("    t%d = %d\n", contador_temp, contador_temp);
+            printf("    if_false t%d goto L%d\n", contador_temp-1, etiq_fin);
+            generar_tac(nodo->der);  // Cuerpo
+            printf("    goto L%d\n", etiq_inicio);
+            printf("L%d:\n", etiq_fin);
+            break;
+        }
+
+        case N_DECLARACION_FUN:
+            printf("fun %s:\n", nodo->nombre_var);
+            generar_tac(nodo->der);   // Cuerpo
+            printf("end_fun %s\n", nodo->nombre_var);
+            break;
+
+        case N_LLAMADA_FUNCION:
+            printf("call %s\n", nodo->nombre_var);
+            printf("    t%d = t-1\n", contador_temp++); // Valor de retorno
+            break;
+
+        case N_RETORNAR:
+            generar_tac(nodo->izq);
+            printf("ret\n");
+            break;
+    }
+}
+\end{lstlisting}
+
+\section{Ejemplo de TAC}
+
+Para el programa:
+\begin{lstlisting}[style=tppstyle]
+entero x = 5;
+entero y = x + 3;
+imprimir(y);
+\end{lstlisting}
+
+El TAC generado sería:
+\begin{verbatim}
+    t0 = 5
+    x = t0
+    t1 = x
+    t2 = 3
+    t3 = t1 + t2
+    y = t3
+    print y
+\end{verbatim}
+
+Para una función:
+\begin{verbatim}
+fun duplicar:
+    t0 = x
+    t1 = 2
+    t2 = t0 * t1
+    res = t2
+ret
+end_fun duplicar
+\end{verbatim}
+
+\section{TAC para Estructuras de Control}
+
+\subsection{Condicional si/sino}
+
+\begin{verbatim}
+    t0 = x
+    t1 = 0
+    t2 = t0 > t1         // t2 = condicion
+    if_false t2 goto L1  // Si falso, ir a L1 (sino)
+    // bloque si
+    goto L2
+L1:
+    // bloque sino
+L2:
+\end{verbatim}
+
+\subsection{Bucle para}
+
+\begin{verbatim}
+    t0 = 0
+    i = t0               // inicializacion: i = 0
+L1:
+    t1 = i
+    t2 = 5
+    t3 = t1 < t2         // condicion: i < 5
+    if_false t3 goto L2
+    // cuerpo del bucle
+    t4 = i
+    t5 = 1
+    t6 = t4 + t5
+    i = t6               // paso: i = i + 1
+    goto L1
+L2:
+\end{verbatim}

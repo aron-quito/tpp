@@ -1,97 +1,94 @@
-# Ejemplos de Código TPP
+# Compilador TPP (Transpilador a RISC-V)
 
-Este documento contiene los ejemplos de prueba para el lexer/parser.
+![Logo de TPP](latex/img/logo-unjbg2.png)
 
-## Ejemplo 1: Calculadora
+TPP es un compilador educativo escrito completamente en C utilizando las herramientas **Flex** (para el análisis léxico) y **Bison** (para el análisis sintáctico). Está diseñado para tomar un lenguaje de programación de alto nivel personalizado en español (con extensión `.to`) y compilarlo a código máquina **RISC-V (RV32I)**, listo para ser ejecutado en el simulador **Logisim Evolution**.
 
-```text
-// Definición clara con llaves y retorno de valor explícito
-fun calcular(entero a, entero b, entero op) -> entero {
-    depende op {
-        1: retornar a + b;
-        2: retornar a - b;
-        3: retornar a * b;
-        4: retornar a / b;
-        otros: 
-            imprimir("Operacion no valida\n");
-            retornar 0; 
-    }
-}
+## 🚀 Características Principales
 
-// Declaración de variables en una sola línea (opcional pero útil)
-entero num1, num2, op, res;
+*   **Sintaxis en Español:** Palabras clave fáciles de entender (`entero`, `decimal`, `si`, `sino`, `mientras`, `para`, `fun`, `retornar`, `imprimir`, `leer`).
+*   **Tipado Estático:** Soporte para variables `entero`, `decimal` y arreglos estáticos (ej. `entero arr[10];`).
+*   **Control de Flujo Completo:** Bloques `si/sino`, bucle `mientras`, bucle `para` y estructura de selección múltiple `depende/caso`.
+*   **Soporte para Funciones:** Declaración de funciones (procedimientos y con valor de retorno).
+*   **Análisis Semántico y Optimizaciones:** Comprobación de tipos, declaración de variables, plegado de constantes algebraicas y código intermedio estructurado (TAC).
+*   **Backend Funcional:** Transforma el Árbol Sintáctico Abstracto (AST) a código Ensamblador y luego a código hexadecimal compatible con memorias ROM/RAM de Logisim.
 
-imprimir("Introduce numero 1: ");
-leer(num1);
+---
 
-imprimir("Introduce numero 2: ");
-leer(num2);
+## 🛠️ Cómo compilar y usar el compilador
 
-// Cadena multilínea para simplificar el I/O
-imprimir("Que operacion deseas hacer:\n1. +\n2. -\n3. *\n4. /\n");
-leer(op);
+### 1. Construir el Compilador
 
-// La llamada a la función es una expresión que se asigna, mucho más intuitivo
-res = calcular(num1, num2, op);
+Asegúrate de tener instalados `flex`, `bison`, `gcc` y `make`. En la raíz del repositorio, ejecuta:
 
-// Imprimir el resultado de forma limpia
-imprimir("El resultado es: ", res);
+```bash
+make
 ```
 
-## Ejemplo 2: Promedio y Condicionales
+Esto generará el ejecutable `./tpp`.
 
-```text
-// Definición de variables con los tipos de tu lexer
-decimal nota1;
-decimal nota2;
-decimal promedio;
+### 2. Compilar un programa fuente (`.to`)
 
-imprimir("Ingrese la primera nota: ");
-leer(nota1);
-imprimir("Ingrese la segunda nota: ");
-leer(nota2);
+Para compilar un código de prueba, pásalo como argumento al compilador:
 
-promedio = (nota1 + nota2) / 2.0;
-
-// Uso de SI y SINO
-si (promedio >= 10.5) {
-    imprimir("¡Felicidades! Has aprobado con: ", promedio);
-} sino {
-    imprimir("Lo siento, has desaprobado con: ", promedio);
-}
+```bash
+./tpp test/prueba01.to
 ```
 
-## Ejemplo 3: Ciclo MIENTRAS
+Si el programa es correcto, el compilador generará la tabla de símbolos y el archivo ensamblador resultante (`output.s`).
 
-```text
-entero cuenta;
+![Ejecución del Compilador](latex/img/prueba01codfin.png)
 
-imprimir("¿Desde qué número quieres iniciar la cuenta regresiva?: ");
-leer(cuenta);
+---
 
-// Uso de MIENTRAS
-mientras (cuenta > 0) {
-    imprimir("Segundos restantes: ", cuenta, "\n");
-    cuenta = cuenta - 1; // Decremento de la variable entero
-}
+## 🖥️ Enlace con Logisim Evolution (Fork RISC-V)
 
-imprimir("¡Tiempo cumplido!");
+Para poder ejecutar tu código compilado en el procesador virtual RISC-V construido en Logisim, es necesario pasar el ensamblador a formato crudo en hexadecimal.
+
+### 1. Generar la imagen Hexadecimal (`.hex`)
+
+El repositorio incluye un script en Python (`compile_to_logisim.py`) que usa el ensamblador nativo para traducir las instrucciones a los archivos `.hex` listos para ser cargados.
+
+Asegúrate de tener instalado Python 3 y el cross-compiler GNU para RISC-V (`riscv64-unknown-elf-gcc`). Luego, ejecuta:
+
+```bash
+python3 compile_to_logisim.py
 ```
 
-## Ejemplo 4: Ciclo PARA
+El script leerá `output.s` y generará dos archivos:
+*   `rom.hex`: Contiene el segmento de código (Instrucciones).
+*   `ram.hex`: Contiene el segmento de datos (Variables).
 
-```text
-entero tabla;
+### 2. Cargar el programa en Logisim
 
-imprimir("¿De qué número deseas ver la tabla de multiplicar?: ");
-leer(tabla);
+1.  Abre el circuito de tu procesador RV32I en **Logisim Evolution**.
+2.  Busca el componente de la Memoria de Instrucciones (**ROM**). Haz clic derecho sobre él, selecciona **Load Image...** y escoge el archivo `rom.hex`.
+3.  Repite el proceso para la Memoria de Datos (**RAM**), cargando el archivo `ram.hex`.
+4.  Inicia el reloj del simulador (`Ctrl+K` o "Simulate > Auto-Tick").
+5.  Observa el funcionamiento en la pantalla (Componente **TTY**) si usaste la instrucción `imprimir`.
 
-imprimir("Tabla del ", tabla, ":\n");
+![Demostración en Logisim](latex/img/prueba08logism.png)
 
-// Uso de PARA con inicialización, condición y paso
-para (entero i = 1; i <= 10; i = i + 1) {
-    entero resultado;
-    resultado = tabla * i;
-    imprimir(tabla, " x ", i, " = ", resultado, "\n");
-}
-```
+---
+
+## 🏗️ Fases del Compilador (Pruebas Visuales)
+
+El compilador permite imprimir los estados intermedios del procesamiento:
+
+**1. Árbol Sintáctico Abstracto (AST)**
+![AST](latex/img/prueba01sintactico.png)
+
+**2. Análisis Semántico y Tabla de Símbolos**
+![Semántico](latex/img/prueba01semantico.png)
+
+**3. Generación de Código Intermedio (TAC)**
+![TAC](latex/img/prueba01ir.png)
+
+**4. Optimizador de Código**
+![Optimizador](latex/img/prueba01opt.png)
+
+---
+
+### Agradecimientos
+
+Agradecemos a nuestro estimado Ing. Manuel Apaza Valencia y al Ing. Acero, por su orientación, exigencia y enseñanzas que hicieron posible la construcción y simulación de este compilador completo.

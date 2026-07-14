@@ -1,0 +1,130 @@
+% ─── Capítulo 0: Introducción ─────────────────────────────────────────────────
+\chapter{Introducción al Compilador TPP}
+
+\section{Descripción General}
+
+El compilador \textbf{TPP} (\textit{Tiny Programming Processor}) es un compilador completo de un lenguaje de programación imperativo de propósito educativo, diseñado con sintaxis en español. El objetivo fundamental del proyecto es traducir código fuente escrito en el lenguaje TPP a instrucciones de ensamblador \textbf{RISC-V RV32I}, que luego pueden ser ejecutadas directamente en un procesador RISC-V de ciclo único implementado en \textbf{Logisim Evolution}.
+
+\begin{infobox}[Objetivo del Compilador TPP]
+Transformar código fuente en español al lenguaje ensamblador RV32I, permitiendo su ejecución en hardware real simulado dentro de Logisim. El resultado final (\texttt{output.s}) puede cargarse directamente en la RAM del circuito para su ejecución.
+\end{infobox}
+
+\section{Arquitectura General del Compilador}
+
+El compilador sigue el pipeline clásico de traducción dividido en dos grandes etapas:
+
+\begin{itemize}
+    \item \textbf{Frontend}: Análisis del código fuente para verificar su validez léxica, sintáctica y semántica. Produce el Árbol Sintáctico Abstracto (AST).
+    \item \textbf{Backend}: Transformación del AST en código ejecutable, pasando por optimización, representación intermedia y generación final de ensamblador RV32I.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=0.7cm, auto,
+    stage/.style={rectangle, draw=tppblue, fill=tppblue!8,
+                  text width=5.5cm, text centered, rounded corners,
+                  minimum height=0.9cm, font=\small\bfseries},
+    file/.style={rectangle, draw=gray, fill=gray!10,
+                 text width=3.5cm, text centered, dashed,
+                 minimum height=0.7cm, font=\footnotesize},
+    arrow/.style={thick,->,>=stealth,color=tppblue},
+    label/.style={font=\small\itshape, text=gray}]
+    
+    % Nodos del pipeline
+    \node [file]   (src)  {archivo.to};
+    \node [stage]  (lex)  [below=of src]  {1. Analizador Léxico};
+    \node [stage]  (par)  [below=of lex]  {2. Analizador Sintáctico};
+    \node [stage]  (sem)  [below=of par]  {3. Analizador Semántico};
+    \node [stage]  (opt)  [below=of sem]  {4. Optimización};
+    \node [stage]  (ir)   [below=of opt]  {5. Código Intermedio};
+    \node [stage]  (gen)  [below=of ir]   {6. Generación de Código};
+    \node [file]   (out)  [below=of gen]  {output.s (RV32I)};
+    
+    % Etiquetas laterales de archivos
+    \node [label, right=1cm of lex] {lexer.l};
+    \node [label, right=1cm of par] {parser.y + ast.c};
+    \node [label, right=1cm of sem] {semantic.c + symtab.c};
+    \node [label, right=1cm of opt] {opt.c};
+    \node [label, right=1cm of ir]  {ir.c};
+    \node [label, right=1cm of gen] {codegen.c};
+    
+    % ─── Línea divisoria Frontend / Backend ───────────────────────────────
+    % Dibujada ENTRE sem y opt: usando coordenadas calculadas manualmente
+    % yshift=-0.6cm baja la línea para estar debajo del nodo sem
+    \draw[thick, dashed, color=gray!70,
+          postaction={decorate,
+            decoration={markings,
+              mark=at position 0.0 with {\node[above right, font=\small\bfseries, color=tppred,  xshift=0.1cm] {FRONTEND};},
+              mark=at position 1.0 with {\node[above left,  font=\small\bfseries, color=tppgreen, xshift=-0.1cm] {BACKEND};}}}]
+        ([xshift=-3cm, yshift=-0.6cm]sem.south) -- ([xshift=3cm, yshift=-0.6cm]sem.south);
+    
+    % Flechas
+    \draw [arrow] (src) -- (lex);
+    \draw [arrow] (lex) -- (par);
+    \draw [arrow] (par) -- (sem);
+    \draw [arrow] (sem) -- (opt);
+    \draw [arrow] (opt) -- (ir);
+    \draw [arrow] (ir) -- (gen);
+    \draw [arrow] (gen) -- (out);
+\end{tikzpicture}
+\caption{Pipeline completo del compilador TPP}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Características del Lenguaje TPP}
+
+El lenguaje TPP soporta las siguientes características:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Categoría} & \textbf{Construcción} & \textbf{Ejemplo} \\
+\midrule
+Tipos de datos & Entero, Decimal & \texttt{entero x = 5;} \\
+Arreglos & Estáticos de tamaño fijo & \texttt{entero arr[10];} \\
+Control de flujo & si/sino, mientras, para & \texttt{si (x > 0) \{ ... \}} \\
+Funciones & Con parámetros y retorno & \texttt{fun sumar(entero a) -> entero} \\
+E/S & Imprimir y leer & \texttt{imprimir("Hola");} \\
+Comentarios & Línea simple & \texttt{// comentario} \\
+Operadores & Aritméticos y relacionales & \texttt{+, -, *, /, ==, !=, <, >} \\
+\bottomrule
+\end{tabular}
+\caption{Características del lenguaje TPP}
+\label{tab:caracteristicas}
+\end{table}
+
+\section{Arquitectura Objetivo: RISC-V RV32I}
+
+El código generado se dirige a la ISA \textbf{RISC-V RV32I} (32-bit Integer), ejecutado en un procesador de ciclo único dentro de Logisim. Las características relevantes son:
+
+\begin{itemize}
+    \item \textbf{Registros}: 32 registros de propósito general (x0--x31).
+    \item \textbf{Stack Pointer}: Registro \texttt{sp} (x2) para manejo del stack.
+    \item \textbf{Registros temporales}: \texttt{t0--t6} para evaluación de expresiones.
+    \item \textbf{Registros de argumentos}: \texttt{a0--a7} para paso de parámetros.
+    \item \textbf{TTY I/O}: La dirección \texttt{0xff000004} es el puerto de salida para imprimir.
+    \item \textbf{Multiplicación}: Implementada por software (\texttt{\_\_soft\_mul}) ya que RV32I base no incluye \texttt{mul}.
+\end{itemize}
+
+\section{Estructura de Archivos del Proyecto}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Archivo} & \textbf{Líneas} & \textbf{Función} \\
+\midrule
+\texttt{lexer.l} & 85 & Análisis léxico (flex) \\
+\texttt{parser.y} & 321 & Análisis sintáctico (bison) + orquestación \\
+\texttt{ast.c / ast.h} & 488 / 96 & Árbol Sintáctico Abstracto \\
+\texttt{semantic.c} & 323 & Análisis semántico y tabla de símbolos \\
+\texttt{symtab.c / symtab.h} & 141 / 30 & Tabla de símbolos \\
+\texttt{opt.c} & 298 & Optimizaciones del AST \\
+\texttt{ir.c} & 178 & Código intermedio (TAC) \\
+\texttt{codegen.c} & 457 & Generación de código RV32I \\
+\bottomrule
+\end{tabular}
+\caption{Archivos del compilador TPP}
+\label{tab:archivos}
+\end{table}

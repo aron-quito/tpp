@@ -1,0 +1,13 @@
+% ─── INTRODUCCIÓN (sin número, aparece en índice) ───────────────────────────
+\chapter*{INTRODUCCIÓN}
+\addcontentsline{toc}{chapter}{INTRODUCCIÓN}
+
+Un compilador es un sistema de software encargado de procesar un programa escrito en un lenguaje fuente y transformarlo en una representación válida para su ejecución, interpretación o traducción posterior. Este proceso no se limita al reconocimiento de palabras y estructuras gramaticales, sino que integra varias fases relacionadas entre sí: análisis léxico, análisis sintáctico, análisis semántico, generación de código intermedio y optimización.
+
+En el avance previo del proyecto se presentó la base inicial del compilador: el analizador léxico desarrollado con Flex y el analizador sintáctico construido con Bison para un minilenguaje estructurado en español. Esta primera etapa permitió reconocer tokens, validar la gramática del lenguaje y detectar errores sintácticos durante el procesamiento del código fuente.
+
+En la presente versión final, el proyecto se amplía hasta consolidar un compilador más completo. Para ello, se incorporó el análisis semántico, encargado de verificar la coherencia del programa más allá de su forma gramatical; la generación de código intermedio, que permite representar las instrucciones en una forma más cercana al procesamiento interno del compilador; y la optimización de código, orientada a simplificar o mejorar dicha representación antes de obtener el resultado final.
+
+Asimismo, el uso de un minilenguaje con palabras reservadas en español mantiene un enfoque didáctico, ya que facilita la comprensión de las estructuras básicas de programación y del funcionamiento interno de un compilador. De esta manera, el proyecto permite observar de forma progresiva cómo un código fuente pasa por distintas etapas hasta convertirse en una representación validada, organizada y optimizada.
+
+Finalmente, este informe describe la evolución del compilador desde sus fases iniciales hasta su versión terminada, resaltando la importancia de integrar análisis léxico, análisis sintáctico, análisis semántico, código intermedio y optimización dentro de una arquitectura funcional de compilación.

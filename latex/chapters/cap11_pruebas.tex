@@ -1,0 +1,274 @@
+% ─── Capítulo: Pruebas y Demostraciones ───────────────────────────────────────
+\chapter{PRUEBAS Y DEMOSTRACIONES DEL COMPILADOR}
+
+\section{Descripción de las Pruebas}
+
+Para validar el funcionamiento integral del compilador TPP se diseñaron programas de prueba que ejercitan cada fase del pipeline. Cada prueba muestra: el código fuente en TPP, el tipo de resultado esperado (correcto o error), y la salida producida por el compilador.
+
+% ─── Macro para placeholder de imagen ─────────────────────────────────────────
+\newcommand{\imgplaceholder}[2]{%
+    \begin{figure}[H]
+    \centering
+    \fbox{\begin{minipage}{0.85\textwidth}
+        \centering\vspace{1.5cm}
+        \textcolor{gray}{\large [Captura de pantalla pendiente]}\\[0.5em]
+        \textcolor{gray}{\normalsize #2}
+        \vspace{1.5cm}
+    \end{minipage}}
+    \caption{#1}
+    \label{fig:#2}
+    \end{figure}
+}
+
+% Versión condicional: si el archivo existe, lo muestra; si no, muestra placeholder
+\newcommand{\imgtest}[3]{%
+    \IfFileExists{img/#1}{%
+        \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.85\textwidth]{img/#1}
+        \caption{#2}
+        \label{fig:#3}
+        \end{figure}
+    }{%
+        \imgplaceholder{#2}{#3}
+    }%
+}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 1: Programa Correcto — Operaciones Básicas}
+
+\subsection{Código Fuente}
+
+\begin{lstlisting}[style=tppstyle, caption={Programa correcto: operaciones básicas}]
+// Prueba básica: variables, operaciones y salida
+entero a = 10;
+entero b = 3;
+entero resultado = a + b;
+imprimir("Suma:");
+imprimir(resultado);
+
+resultado = a * b;
+imprimir("Producto:");
+imprimir(resultado);
+\end{lstlisting}
+
+\subsection{Salida Esperada del Compilador}
+
+El compilador procesa el programa sin errores, muestra la tabla de símbolos, el TAC y el ensamblador generado:
+
+\begin{verbatim}
+==================== TABLA DE SIMBOLOS ====================
+Nombre         Categoria  Tipo    Ambito  Tam  Memoria
+a              Variable   entero  0       1    0x00000000
+b              Variable   entero  0       1    0x00000004
+resultado      Variable   entero  0       1    0x00000008
+Total: 3 simbolos | Memoria usada: 12 bytes
+==================== OPTIMIZACION ====================
+  - Plegado de constantes: 0
+==================== CODIGO FINAL (RV32I) ====================
+    li t0, 10
+    sw t0, 0(sp)
+    li t0, 3
+    sw t0, 4(sp)
+    ...
+\end{verbatim}
+
+\imgtest{prueba01sintactico.png}{Ejecución del programa mostrando el árbol sintáctico}{prueba01sintactico}
+\imgtest{prueba01semantico.png}{Ejecución del programa mostrando análisis semántico y tabla de símbolos}{prueba01semantico}
+\imgtest{prueba01ir.png}{Ejecución del programa mostrando el código intermedio (TAC)}{prueba01ir}
+\imgtest{prueba01opt.png}{Ejecución del programa mostrando las optimizaciones aplicadas}{prueba01opt}
+\imgtest{prueba01codfin.png}{Ejecución del programa mostrando el código final generado}{prueba01codfin}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 2: Error Léxico}
+
+\subsection{Código Fuente con Error}
+
+\begin{lstlisting}[style=tppstyle, caption={Programa con error léxico: carácter inválido \_}]
+// El guión bajo no es válido en TPP
+entero mi_variable = 5;   // ERROR: '_' no es válido
+imprimir(mi_variable);
+\end{lstlisting}
+
+\subsection{Salida del Compilador}
+
+Al encontrar el carácter \texttt{\_}, el lexer reporta el error léxico con línea y columna exactas:
+
+\begin{verbatim}
+Error Léxico en la línea 2, columna 11: Carácter inválido '_'
+Error Léxico en la línea 2, columna 20: Carácter inválido '_'
+\end{verbatim}
+
+El compilador \textbf{no aborta}, sino que reporta todos los errores léxicos encontrados y continúa con los tokens válidos. Sin embargo, los identificadores afectados no serán reconocidos, lo que probablemente dispare errores sintácticos en cascada.
+
+\imgtest{prueba02.png}{Captura de error léxico por carácter inválido}{error_lexico}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 3: Error Sintáctico}
+
+\subsection{Código Fuente con Error}
+
+\begin{lstlisting}[style=tppstyle, caption={Programa con error sintáctico: falta paréntesis}]
+// Falta el paréntesis de cierre en el si
+entero x = 5;
+si (x > 0 {      // ERROR: falta ')'
+    imprimir("positivo");
+}
+\end{lstlisting}
+
+\subsection{Salida del Compilador}
+
+Bison detecta el error sintáctico en la posición exacta. La recuperación de errores (\textit{panic mode}) con el token \texttt{error} permite que el parser continúe analizando el resto del archivo:
+
+\begin{verbatim}
+¡Ups! Hay un problema sintáctico en tu código.
+Linea 3, Columna 10
+Detalle: syntax error, unexpected '{', expecting ')'
+=> [Panic Mode] Error en condicion del SI. Recuperando...
+\end{verbatim}
+
+\imgtest{prueba03.png}{Captura de error sintáctico por paréntesis faltante}{error_sintactico}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 4: Error Semántico}
+
+\subsection{Código Fuente con Error}
+
+\begin{lstlisting}[style=tppstyle, caption={Programa con error semántico: variable no declarada}]
+// Se intenta usar una variable que no fue declarada
+entero x = 5;
+entero resultado = x + y;  // ERROR: 'y' no declarada
+imprimir(resultado);
+\end{lstlisting}
+
+\subsection{Salida del Compilador}
+
+El analizador semántico detecta el uso de un identificador que no existe en la tabla de símbolos:
+
+\begin{verbatim}
+Error Semantico: Uso de variable no declarada: 'y'
+Error Semantico (linea aprox.): Uso de variable no declarada: 'y'
+==================== TABLA DE SIMBOLOS ====================
+x              Variable   entero  0       1    0x00000000
+resultado      Variable   entero  0       1    0x00000004
+Total: 2 simbolos | Memoria usada: 8 bytes
+[COMPILACION ABORTADA: se encontraron errores semanticos]
+\end{verbatim}
+
+\imgtest{prueba04.png}{Captura de error semántico por variable no declarada}{error_semantico}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 5: Programa con Funciones}
+
+\subsection{Código Fuente}
+
+\begin{lstlisting}[style=tppstyle, caption={Programa correcto con declaración y llamada de función}]
+fun duplicar(entero n) -> entero {
+    retornar n * 2;
+}
+
+fun main() {
+    entero valor = 7;
+    entero doble = duplicar(valor);
+    imprimir("Doble de 7:");
+    imprimir(doble);
+}
+\end{lstlisting}
+
+\subsection{Salida Esperada}
+
+\begin{verbatim}
+==================== TABLA DE SIMBOLOS ===============================
+Nombre               Categoria  Tipo       Ambito   Tam      Memoria   
+----------------------------------------------------------------------
+.ra_main             Variable   entero     0        1        0x00000008
+main                 Funcion    ninguno    0        -        0x00000000
+.ra_duplicar         Variable   entero     0        1        0x00000000
+duplicar             Funcion    entero     0        -        0x00000000
+----------------------------------------------------------------------
+Total: 4 simbolos | Memoria usada: 20 bytes (5 words)
+\end{verbatim}
+
+\imgtest{prueba05.png}{Ejecución del programa con funciones}{prueba_funciones}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 6: Optimización de Constantes}
+
+\subsection{Código Fuente}
+
+\begin{lstlisting}[style=tppstyle, caption={Programa que activa plegado de constantes y simplificación algebraica}]
+entero a = 10 * 2 + 3;   // Debe plegarse a 23
+entero b = a + 0;         // Simplificacion algebraica: b = a
+entero c = 1 * a;         // Simplificacion algebraica: c = a
+imprimir(a);
+imprimir(b);
+imprimir(c);
+\end{lstlisting}
+
+\subsection{Salida del Optimizador}
+
+\begin{verbatim}
+==================== OPTIMIZACION DE CODIGO ====================
+  Optimizaciones aplicadas:
+    - Plegado de constantes:        2  (10*2=20, 20+3=23)
+    - Simplificacion algebraica:    2  (a+0->a, 1*a->a)
+    - Eliminacion de codigo muerto: 0
+  Total: 4 optimizaciones
+\end{verbatim}
+
+\imgtest{prueba06.png}{Ejecución mostrando optimizaciones aplicadas}{prueba_optimizacion}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 7: Programa con Bucles y Arreglos}
+
+\subsection{Código Fuente}
+
+\begin{lstlisting}[style=tppstyle, caption={Programa con arreglo y bucle para}]
+entero arr[5];
+entero i;
+para (entero k = 0; k < 5; k = k + 1) {
+    arr[k] = k * 2;
+}
+para (entero j = 0; j < 5; j = j + 1) {
+    imprimir(arr[j]);
+}
+\end{lstlisting}
+
+\subsection{Salida Esperada}
+
+El programa imprime: 0, 2, 4, 6, 8 (los primeros 5 múltiplos de 2).
+
+\imgtest{prueba07logism.png}{Ejecución del programa con arreglos y bucles para}{prueba_arreglos}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Prueba 8: Prueba Integral — Backend}
+
+\subsection{Código Fuente}
+
+\begin{lstlisting}[style=tppstyle, caption={Prueba backend: sumar elementos de arreglo}]
+fun sumarArreglo(entero n) -> entero {
+    entero suma = 0;
+    entero arr[5];
+    arr[0] = 1;
+    arr[1] = 2;
+    arr[2] = 3;
+    arr[3] = 4;
+    arr[4] = 5;
+    para (entero i = 0; i < n; i = i + 1) {
+        suma = suma + arr[i];
+    }
+    retornar suma;
+}
+
+fun main() {
+    entero total = sumarArreglo(5);
+    imprimir("Suma 1..5:");
+    imprimir(total);
+}
+\end{lstlisting}
+
+\subsection{Resultado en Logisim}
+
+Con el archivo \texttt{output.hex} cargado en la RAM del procesador Logisim, la ejecución imprime \texttt{15} por el TTY del circuito.
+
+\imgtest{prueba08logism.png}{Ejecución del programa en Logisim Evolution — salida TTY}{prueba_logisim}

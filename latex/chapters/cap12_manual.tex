@@ -1,0 +1,176 @@
+% ─── Capítulo: Manual de Usuario ──────────────────────────────────────────────
+\chapter{MANUAL DE USUARIO}
+
+\section{Sintaxis del Lenguaje TPP}
+
+El lenguaje TPP utiliza palabras reservadas en español y sigue una estructura similar a C o Java. Todo archivo fuente debe tener la extensión \texttt{.to}. A continuación se detalla cómo utilizar cada una de las estructuras del lenguaje.
+
+\subsection{Tipos de Datos y Variables}
+
+TPP soporta variables \texttt{entero} y \texttt{decimal}, así como arreglos estáticos. Todas las sentencias deben terminar en punto y coma (\texttt{;}).
+
+\begin{lstlisting}[style=tppstyle, caption={Declaración de variables y arreglos}]
+// Declaracion e inicializacion
+entero edad = 20;
+decimal pi = 3.14;
+
+// Declaracion multiple
+entero x, y, z;
+
+// Declaracion de arreglos (el tamano debe ser un numero literal)
+entero notas[5];
+notas[0] = 15;
+notas[1] = 18;
+\end{lstlisting}
+
+\subsection{Entrada y Salida}
+
+\begin{lstlisting}[style=tppstyle, caption={Operaciones de Entrada y Salida}]
+// Imprimir cadenas de texto o variables
+imprimir("Bienvenido al sistema");
+imprimir(edad);
+
+// Leer un valor desde consola hacia una variable
+leer(edad);
+\end{lstlisting}
+
+\subsection{Expresiones y Operadores}
+
+El lenguaje TPP permite construir expresiones aritméticas, lógicas y relacionales complejas respetando la precedencia matemática estándar (de mayor a menor prioridad):
+
+\begin{itemize}
+    \item \textbf{Agrupación:} Paréntesis \texttt{( )} para forzar la prioridad de evaluación.
+    \item \textbf{Aritméticos:} Multiplicación \texttt{*}, División \texttt{/} (prioridad alta). Suma \texttt{+}, Resta \texttt{-} (prioridad baja).
+    \item \textbf{Relacionales:} Mayor \texttt{>}, Menor \texttt{<}, Mayor o Igual \texttt{>=}, Menor o Igual \texttt{<=}.
+    \item \textbf{Igualdad:} Igual que \texttt{==}, Diferente de \texttt{!=}.
+\end{itemize}
+
+\begin{infobox}[Tipos en Expresiones]
+TPP realiza \textbf{conversiones implícitas (coerción)} de tipos cuando se mezclan enteros y decimales en una operación aritmética. El resultado automáticamente se promoverá a decimal para no perder precisión. Sin embargo, los arreglos no pueden ser operados directamente (solo sus elementos individuales).
+\end{infobox}
+
+\subsection{Estructuras Condicionales: \texttt{si} / \texttt{sino}}
+
+La estructura condicional evalúa una expresión. Si es diferente de cero (verdadero), ejecuta el primer bloque; de lo contrario, el bloque \texttt{sino}.
+
+\begin{lstlisting}[style=tppstyle, caption={Uso de si y sino}]
+si (edad >= 18) {
+    imprimir("Es mayor de edad");
+} sino {
+    imprimir("Es menor de edad");
+}
+\end{lstlisting}
+
+\subsection{Selección Múltiple: \texttt{depende} / \texttt{caso}}
+
+Equivalente a la construcción \texttt{switch/case} de lenguajes de la familia C. Permite evaluar el valor de una variable y ejecutar exclusivamente el bloque que coincida con el caso correspondiente.
+
+\textbf{Detalles importantes:}
+\begin{itemize}
+    \item A diferencia de C, \textbf{no es necesario utilizar un equivalente a \texttt{break}}. La semántica de TPP asume que, una vez que un caso se ejecuta, el flujo del programa sale automáticamente del bloque \texttt{depende}.
+    \item Los casos solo pueden comparar contra literales constantes, no contra otras variables.
+    \item El bloque \texttt{otros} actúa de forma idéntica a \texttt{default}, ejecutándose si ninguna de las condiciones anteriores se cumplió. Su presencia es opcional.
+\end{itemize}
+
+\begin{lstlisting}[style=tppstyle, caption={Uso de depende y caso}]
+entero opcion = 2;
+depende (opcion) {
+    caso 1: {
+        imprimir("Opcion 1 seleccionada");
+    }
+    caso 2: {
+        imprimir("Opcion 2 seleccionada");
+    }
+    otros: {
+        imprimir("Opcion no valida");
+    }
+}
+\end{lstlisting}
+
+\subsection{Bucles: \texttt{mientras} y \texttt{para}}
+
+Los bucles permiten repetir un bloque de código. TPP soporta dos construcciones iterativas principales.
+
+\textbf{1. Bucle \texttt{mientras} (while):} 
+Se evalúa la condición de continuación antes de cada iteración. Si es verdadera, se ejecuta el cuerpo del bucle. Útil cuando no se conoce de antemano el número de iteraciones.
+
+\textbf{2. Bucle \texttt{para} (for):} 
+Es un bloque compacto que concentra la lógica de iteración. Requiere exactamente tres partes separadas por punto y coma:
+\begin{enumerate}
+    \item \textbf{Inicialización:} Se ejecuta una sola vez al entrar al bucle. Puede declarar una nueva variable iteradora (ej. \texttt{entero i = 0}) o inicializar una existente.
+    \item \textbf{Condición:} Expresión booleana evaluada antes de cada iteración.
+    \item \textbf{Actualización:} Instrucción que se ejecuta al final de cada iteración, típicamente para incrementar el contador.
+\end{enumerate}
+
+\begin{lstlisting}[style=tppstyle, caption={Uso de bucles}]
+// Bucle MIENTRAS
+entero contador = 0;
+mientras (contador < 5) {
+    imprimir(contador);
+    contador = contador + 1; // No existe ++ en TPP
+}
+
+// Bucle PARA (inicializacion; condicion; incremento)
+para (entero i = 0; i < 10; i = i + 1) {
+    imprimir(i);
+}
+\end{lstlisting}
+
+\subsection{Funciones: \texttt{fun}}
+
+Las funciones se declaran con la palabra \texttt{fun}. Pueden tener parámetros y opcionalmente devolver un valor con la flecha \texttt{->}. La palabra \texttt{retornar} devuelve el resultado.
+
+\begin{lstlisting}[style=tppstyle, caption={Definicion de funciones}]
+// Funcion que retorna un valor
+fun sumar(entero a, entero b) -> entero {
+    retornar a + b;
+}
+
+// Funcion sin valor de retorno (procedimiento)
+fun saludar(entero veces) {
+    para (entero i = 0; i < veces; i = i + 1) {
+        imprimir("Hola");
+    }
+}
+
+// Punto de entrada principal (opcional, por convención)
+fun main() {
+    entero res = sumar(5, 3);
+    imprimir(res);
+}
+\end{lstlisting}
+
+\section{Guía de Compilación y Ejecución en Logisim}
+
+Para llevar un programa fuente \texttt{.to} hasta el procesador simulado en Logisim, siga estos pasos:
+
+\subsection{1. Compilación del código fuente}
+
+Ejecute el compilador pasándole el archivo \texttt{.to}. Si es exitoso, generará el archivo ensamblador \texttt{output.s}.
+
+\begin{lstlisting}[language=bash, style=cstyle]
+$ ./tpp programa.to
+\end{lstlisting}
+Si hay errores léxicos, sintácticos o semánticos, el compilador los reportará en la consola y abortará el proceso.
+
+\subsection{2. Generación del Código Hexadecimal}
+
+El ensamblador de Logisim requiere que las instrucciones estén en formato hexadecimal (\texttt{v2.0 raw}). Se utiliza el script de Python incluido en el repositorio:
+
+\begin{lstlisting}[language=bash, style=cstyle]
+$ python3 compile_to_logisim.py
+\end{lstlisting}
+
+El script leerá \texttt{output.s} y generará archivos hexadecimales (por defecto produce \texttt{output.hex}, o \texttt{rom.hex} y \texttt{ram.hex} si la arquitectura del circuito separa las memorias de instrucciones y datos).
+
+\subsection{3. Carga en Logisim Evolution}
+
+\begin{enumerate}
+    \item Abra su proyecto de procesador RV32I en \textbf{Logisim Evolution}.
+    \item Localice el componente de memoria \textbf{ROM} (memoria de instrucciones) y/o \textbf{RAM} (memoria de datos).
+    \item Haga \textbf{clic derecho} sobre el componente de memoria.
+    \item Seleccione \textbf{Load Image...} (Cargar Imagen).
+    \item Seleccione el archivo generado (\texttt{rom.hex}, \texttt{ram.hex} u \texttt{output.hex} según corresponda).
+    \item Inicie el reloj (Ctrl+K o menú Simulate $\rightarrow$ Auto-Tick) para ver el programa ejecutarse.
+    \item Si el programa utiliza la instrucción \texttt{imprimir}, abra el componente TTY para ver la salida del programa.
+\end{enumerate}

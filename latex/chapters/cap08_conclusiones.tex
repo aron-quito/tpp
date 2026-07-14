@@ -1,0 +1,169 @@
+% ─── Capítulo 8: Conclusiones ─────────────────────────────────────────────────
+\chapter{Conclusiones y Trabajo Futuro}
+
+\section{Resumen del Proceso de Compilación}
+
+El compilador TPP implementa el pipeline completo de traducción desde un lenguaje de programación imperativo en español hasta instrucciones ejecutables en hardware real. A continuación se resume el recorrido de un programa a través de cada fase:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{2.5cm}p{3.5cm}p{7cm}}
+\toprule
+\textbf{Fase} & \textbf{Archivo} & \textbf{Transformación} \\
+\midrule
+Léxico & \texttt{lexer.l} & Texto → tokens (\texttt{NUM\_ENTERO}, \texttt{ID}, \texttt{SI}, ...) \\
+Sintáctico & \texttt{parser.y} & Tokens → AST jerárquico \\
+Semántico & \texttt{semantic.c} & AST → AST anotado con tipos y offsets de memoria \\
+Tabla de símb. & \texttt{symtab.c} & Registro de variables/funciones con sus direcciones \\
+Optimización & \texttt{opt.c} & AST → AST simplificado (plegado, algebraica, muerto) \\
+IR/TAC & \texttt{ir.c} & AST → representación plana de 3 direcciones (diagnóstico) \\
+Codegen & \texttt{codegen.c} & AST → instrucciones RV32I en \texttt{output.s} \\
+\bottomrule
+\end{tabular}
+\caption{Resumen del pipeline completo}
+\label{tab:resumen}
+\end{table}
+
+\section{Logros Implementados}
+
+\subsection{Frontend}
+\begin{itemize}
+    \item \textbf{Analizador léxico} completo con 30+ tokens, soporte de comentarios, cadenas con secuencias de escape, y reporte preciso de errores con línea y columna.
+    \item \textbf{Analizador sintáctico} LALR(1) con gramática completa, resolución de ambigüedades (precedencia de operadores, dangling else), y recuperación de errores en modo pánico.
+    \item \textbf{Analizador semántico} con verificación de tipos, detección de variables no declaradas, redefinición de símbolos y anotación de direcciones de memoria en el AST.
+    \item \textbf{Tabla de símbolos} con scoping anidado, asignación estática de memoria y visualización detallada al final del análisis.
+\end{itemize}
+
+\subsection{Backend}
+\begin{itemize}
+    \item \textbf{Optimizador de AST} con 4 pases: plegado de constantes, simplificación algebraica, eliminación de código muerto y propagación de constantes.
+    \item \textbf{Generador de código intermedio} (TAC) para diagnóstico y comprensión del proceso.
+    \item \textbf{Generador de código RV32I} completo con:
+    \begin{itemize}
+        \item Generación bifásica para soporte de funciones.
+        \item Convención de llamada RISC-V (a0--a7, ra).
+        \item Prólogo y epílogo completo de funciones (salvar/restaurar ra).
+        \item Acceso a arreglos con cálculo dinámico de dirección.
+        \item Multiplicación por software (\texttt{\_\_soft\_mul}).
+        \item Impresión de enteros como ASCII (\texttt{\_\_print\_num}).
+        \item Salida TTY a la dirección Logisim \texttt{0xff000004}.
+    \end{itemize}
+\end{itemize}
+
+\section{Construcciones Soportadas}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Característica} & \textbf{Estado} \\
+\midrule
+Variables enteras y decimales & \checkmark\ Implementado \\
+Arreglos estáticos & \checkmark\ Implementado \\
+Operadores aritméticos (+, -, *, /) & \checkmark\ Implementado \\
+Operadores relacionales (==, !=, <, >, <=, >=) & \checkmark\ Implementado \\
+Estructura condicional si/sino & \checkmark\ Implementado \\
+Bucle mientras & \checkmark\ Implementado \\
+Bucle para & \checkmark\ Implementado \\
+Estructura depende/caso & \checkmark\ Implementado \\
+Declaración y llamada de funciones & \checkmark\ Implementado \\
+Parámetros por valor & \checkmark\ Implementado \\
+Variables globales & \checkmark\ Implementado \\
+Imprimir cadenas y enteros & \checkmark\ Implementado \\
+Comentarios de línea (//) & \checkmark\ Implementado \\
+Optimización de constantes & \checkmark\ Implementado \\
+Recursión & $\sim$\ Parcial (requiere stack dinámico) \\
+Tipo decimal en codegen & $\times$\ Pendiente \\
+Paso de arreglos a funciones & $\times$\ Pendiente \\
+\bottomrule
+\end{tabular}
+\caption{Estado de las características del compilador}
+\label{tab:estado}
+\end{table}
+
+\section{Limitaciones Actuales}
+
+\subsection{Modelo de Memoria Estático}
+
+El compilador TPP utiliza un modelo de memoria \textbf{completamente estático}: todos los offsets se calculan en tiempo de compilación y son fijos. Esto tiene las siguientes implicaciones:
+
+\begin{itemize}
+    \item \textbf{Recursión limitada}: Una función recursiva sobreescribiría sus propias variables locales al ser llamada de nuevo, ya que todas las invocaciones comparten el mismo espacio de memoria.
+    \item \textbf{Sin allocación dinámica}: No existe instrucción \texttt{malloc} equivalente.
+    \item \textbf{Arreglos de tamaño fijo}: Los arreglos deben declararse con tamaño constante conocido en compilación.
+\end{itemize}
+
+\subsection{Sin guión bajo en identificadores}
+
+El lexer solo reconoce \texttt{[a-zA-Z][a-zA-Z0-9]*} como identificadores. El carácter \texttt{\_} produce un error léxico. Se recomienda camelCase.
+
+\section{Trabajo Futuro}
+
+Las siguientes mejoras podrían extender las capacidades del compilador:
+
+\begin{enumerate}
+    \item \textbf{Stack dinámico por función}: Implementar un frame pointer (\texttt{fp}) separado del stack pointer para que cada invocación de función tenga su propio frame. Esto habilitaría la recursión completa.
+    
+    \item \textbf{Soporte de tipo decimal en codegen}: Generar instrucciones de punto flotante o emular operaciones decimales con enteros de punto fijo.
+    
+    \item \textbf{Paso de arreglos por referencia}: Pasar la dirección base del arreglo como puntero al argumento \texttt{a0}, permitiendo que las funciones modifiquen arreglos externos.
+    
+    \item \textbf{Múltiples archivos fuente}: Soporte para \texttt{importar} otros archivos \texttt{.to} y compilarlos juntos.
+    
+    \item \textbf{Optimizaciones adicionales}: Eliminación de subexpresiones comunes, renombramiento de registros, inlining de funciones pequeñas.
+    
+    \item \textbf{Soporte de guión bajo}: Extender el lexer para permitir \texttt{\_} en identificadores (\texttt{[a-zA-Z\_][a-zA-Z0-9\_]*}).
+    
+    \item \textbf{Extensión de ISA}: Soporte para la extensión \texttt{M} de RISC-V (multiplicación nativa con \texttt{mul}, \texttt{div}) una vez que el procesador Logisim la implemente.
+\end{enumerate}
+
+\section{Ejemplo Completo: De Fuente a Binario}
+
+El siguiente ejemplo muestra el recorrido completo de una línea de código:
+
+\begin{lstlisting}[style=tppstyle, caption={Código fuente TPP}]
+entero resultado = 10 * 2 + 3;
+imprimir(resultado);
+\end{lstlisting}
+
+\textbf{Tokens producidos por el lexer:}
+\begin{verbatim}
+TIPO_ENTERO  ID("resultado")  ASIG  NUM_ENTERO(10)  MULT  
+NUM_ENTERO(2)  MAS  NUM_ENTERO(3)  PUNTOCOMA
+IMPRIMIR  PARI  ID("resultado")  PARD  PUNTOCOMA
+\end{verbatim}
+
+\textbf{AST (antes de optimización):}
+\begin{verbatim}
+[Declaracion Var] entero
+  [Asignacion] resultado
+    [Operacion] '+'
+      [Operacion] '*'
+        [Entero] 10
+        [Entero] 2
+      [Entero] 3
+[Imprimir]
+  [Variable] resultado
+\end{verbatim}
+
+\textbf{AST (después de optimización — plegado en cascada):}
+\begin{verbatim}
+[Declaracion Var] entero
+  [Asignacion] resultado
+    [Entero] 23        ← 10*2=20, 20+3=23
+[Imprimir]
+  [Variable] resultado
+\end{verbatim}
+
+\textbf{Código RV32I generado:}
+\begin{lstlisting}[style=asmstyle, caption={Ensamblador RV32I generado}]
+    li  t0, 23         # Constante plegada (era 10*2+3)
+    sw  t0, 0(sp)      # resultado = 23
+    lw  t0, 0(sp)      # Cargar resultado
+    mv  a0, t0
+    call __print_num   # Imprimir el entero
+    li  t0, 10         # Salto de línea
+    sw  t0, 0xff000004
+\end{lstlisting}
+
+Sin la optimización de plegado, se habrían generado ~12 instrucciones adicionales para la multiplicación y la suma. Con la optimización, se reduce a 2 instrucciones esenciales.

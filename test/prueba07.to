@@ -1,0 +1,8 @@
+entero arr[5];
+entero i;
+para (entero k = 0; k < 5; k = k + 1) {
+    arr[k] = k * 2;
+}
+para (entero j = 0; j < 5; j = j + 1) {
+    imprimir(arr[j]);
+}

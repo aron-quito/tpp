@@ -1,0 +1,3 @@
+// El g u i n bajo no es v l i d o en TPP
+entero m i _ v a r i a b l e = 5; // ERROR : ’_’ no es v l i d o
+imprimir ( m i _ v a r i a b l e ) ;

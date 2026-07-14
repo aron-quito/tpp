@@ -1,0 +1,122 @@
+% ─── Capítulo: Complicaciones ─────────────────────────────────────────────────
+\chapter{COMPLICACIONES}
+
+\section{Panorama General de Dificultades}
+
+La integración entre el compilador TPP (escrito en C) y el procesador Logisim Evolution no fue inmediata. A lo largo del desarrollo surgieron múltiples complicaciones técnicas en tres niveles distintos: la generación del código ensamblador, el proceso de ensamblado a hexadecimal, y la ejecución en el circuito simulado.
+
+\section{Complicación 1: Ausencia de Instrucción \texttt{mul} en RV32I Base}
+
+\subsection{Descripción}
+
+La ISA RISC-V RV32I en su variante base (sin la extensión M) \textbf{no incluye instrucción de multiplicación}. El compilador TPP genera expresiones de multiplicación desde el lenguaje fuente, por lo que fue necesario encontrar una solución a nivel de generación de código.
+
+\subsection{Solución Adoptada}
+
+Se implementó una rutina de multiplicación por software (\texttt{\_\_soft\_mul}) que simula la multiplicación mediante sumas repetidas. Esta rutina es emitida automáticamente al inicio de cada archivo \texttt{output.s}:
+
+\begin{lstlisting}[style=asmstyle, caption={Rutina \_\_soft\_mul generada automáticamente}]
+__soft_mul:
+    li  t0, 0           # acumulador = 0
+    li  t1, 0           # contador = 0
+.mul_loop:
+    beq t1, a1, .mul_end  # si contador == a1, terminar
+    add t0, t0, a0        # acumulador += a0
+    addi t1, t1, 1
+    j   .mul_loop
+.mul_end:
+    mv  a0, t0          # retornar resultado en a0
+    ret
+\end{lstlisting}
+
+\begin{notebox}
+Esta solución funciona correctamente para operandos positivos. La multiplicación de números negativos o de resultado mayor a \texttt{0x7FFFFFFF} no está soportada por esta implementación de suma repetida.
+\end{notebox}
+
+\section{Complicación 2: Salida TTY en Logisim}
+
+\subsection{Descripción}
+
+El mecanismo de salida por consola en Logisim Evolution difiere de la convención estándar de RISC-V. En el procesador estándar se usan syscalls (instrucciones \texttt{ecall}), pero Logisim no las implementa. En cambio, utiliza \textbf{Memoria Mapeada a I/O (MMIO)}: la dirección \texttt{0xFF000004} está conectada directamente al componente TTY del circuito.
+
+\subsection{Problema de Codificación}
+
+La dirección \texttt{0xFF000004} es un valor de 32 bits que no cabe en un inmediato de 12 bits (el límite de \texttt{addi}). Se requiere la instrucción \texttt{lui} (Load Upper Immediate) para cargar los 20 bits superiores, seguida de \texttt{addi} para los 12 inferiores. Sin embargo, el bit de signo del inmediato de \texttt{addi} causa que valores superiores a \texttt{0x7FF} sean extendidos en signo, requiriendo compensación en la parte \texttt{lui}.
+
+\subsection{Solución}
+
+El compilador genera la secuencia correcta con compensación:
+
+\begin{lstlisting}[style=asmstyle, caption={Acceso a TTY Logisim con compensación de signo}]
+    # Salida de caracter en t0 al TTY de Logisim
+    li  t1, 0xFF000004    # Dirección TTY
+    sw  t0, 0(t1)         # Escribir carácter (ASCII)
+\end{lstlisting}
+
+El ensamblador \texttt{compile\_to\_logisim.py} expande \texttt{li t1, 0xFF000004} a la secuencia correcta de \texttt{lui + addi} con la compensación de bit de signo apropiada.
+
+\section{Complicación 3: Modelo de Memoria Estático y Funciones Recursivas}
+
+\subsection{Descripción}
+
+El compilador TPP asigna \textbf{direcciones de memoria estáticas} a todas las variables en tiempo de compilación. Esto significa que si una función se llama a sí misma recursivamente, las variables de la segunda invocación sobreescriben las de la primera (comparten el mismo offset en \texttt{sp}).
+
+\subsection{Manifestación del Error}
+
+El siguiente programa en TPP produce resultados incorrectos si se trata de ejecutarlo recursivamente:
+
+\begin{lstlisting}[style=tppstyle, caption={Intento de recursión en TPP (resultado incorrecto)}]
+fun factorial(entero n) -> entero {
+    si (n == 0) {
+        retornar 1;
+    }
+    // ERROR: la llamada recursiva sobreescribe el valor de 'n'
+    retornar n * factorial(n - 1);
+}
+\end{lstlisting}
+
+\subsection{Causa Técnica}
+
+En un compilador con frames dinámicos de pila, cada invocación de función ajustaría el stack pointer (\texttt{sp}) para crear un nuevo frame propio. En TPP, \texttt{sp} permanece fijo y todos los offsets son absolutos desde el mismo \texttt{sp} base.
+
+\subsection{Solución Actual}
+
+Para la versión actual del compilador, la recursión se marcó como \textbf{no soportada} y se documenta como limitación conocida. Como trabajo futuro, se propone implementar un modelo de frame pointer (\texttt{fp}) dinámico similar al de la convención RISC-V completa.
+
+\section{Complicación 4: Formato del Archivo Hexadecimal para Logisim}
+
+\subsection{Descripción}
+
+Logisim Evolution requiere un formato de archivo específico para cargar en su componente RAM: el encabezado \texttt{v2.0 raw} seguido de los valores hexadecimales de 32 bits. Este formato no es estándar ni el producido directamente por \texttt{riscv64-unknown-elf-objcopy}.
+
+\subsection{Problema Inicial}
+
+Al principio se intentó usar el toolchain GNU (\texttt{riscv64-unknown-elf-gcc} + \texttt{objcopy -O ihex}), pero el formato Intel HEX no es directamente interpretado por la versión del componente RAM de Logisim Evolution utilizada en el laboratorio.
+
+\subsection{Solución}
+
+Se adaptó el script \texttt{compile\_to\_logisim.py} para producir exactamente el formato requerido. El script lee el \texttt{output.s}, lo ensambla internamente instrucción por instrucción, y produce el archivo \texttt{output.hex} con el encabezado correcto.
+
+\section{Complicación 5: Conflictos Léxicos con Babel en LaTeX}
+
+\subsection{Descripción}
+
+Durante la generación de esta documentación, el paquete \texttt{babel} con la opción \texttt{spanish} activaba caracteres activos (como \texttt{<} y \texttt{>}) que interferían con TikZ y con el paquete \texttt{listings} al mostrar código ensamblador con operadores de comparación.
+
+\subsection{Solución}
+
+Se utilizaron las opciones \texttt{es-noquoting} y \texttt{es-noshorthands} de babel para desactivar los atajos de caracteres específicos del español que conflictuaban con TikZ:
+
+\begin{lstlisting}[caption={Configuración Babel para compatibilidad con TikZ}]
+\usepackage[spanish,es-noquoting,es-noshorthands]{babel}
+\end{lstlisting}
+
+\section{Complicación 6: Caracteres Especiales en Cadenas de Texto}
+
+\subsection{Descripción}
+
+El lexer de TPP soporta cadenas de texto con secuencias de escape (\texttt{\textbackslash n}, \texttt{\textbackslash t}). Sin embargo, el generador de código debía emitir estas cadenas en la sección \texttt{.data} del ensamblador y el script de Python debía procesarlas para calcular correctamente el tamaño de la cadena en memoria.
+
+\subsection{Solución}
+
+Se implementó un pre-procesador de cadenas en \texttt{codegen.c} que convierte las secuencias de escape a sus equivalentes en código ASCII antes de emitirlas, y el script de Python trata cada carácter de la cadena (incluyendo el nulo terminal \texttt{\textbackslash 0}) como un byte independiente a emitir en memoria.

@@ -81,18 +81,47 @@ void eliminar_ambito(int ambito) {
     }
 }
 
+static const char* nombre_tipo(int tipo) {
+    switch(tipo) {
+        case 268: return "entero";
+        case 269: return "decimal";
+        case 0:   return "ninguno";
+        default:  return "?";
+    }
+}
+
 void imprimir_symtab() {
     printf("==================== TABLA DE SIMBOLOS ====================\n");
-    printf("%-20s %-10s %-10s %-10s %-10s\n", "Nombre", "Categoria", "Tipo", "Ambito", "Memoria");
-    printf("--------------------------------------------------------------------------\n");
+    printf("%-20s %-10s %-10s %-8s %-8s %-10s\n", 
+           "Nombre", "Categoria", "Tipo", "Ambito", "Tam", "Memoria");
+    printf("----------------------------------------------------------------------\n");
+    
     Simbolo *actual = tabla_simbolos;
+    int count = 0;
     while (actual != NULL) {
-        printf("%-20s %-10s %-10d %-10d 0x%08X\n", actual->nombre, 
+        char tam_str[16];
+        if (actual->categoria == SYM_VAR && actual->tamanio > 1) {
+            sprintf(tam_str, "[%d]", actual->tamanio);
+        } else if (actual->categoria == SYM_VAR) {
+            sprintf(tam_str, "1");
+        } else {
+            sprintf(tam_str, "-");
+        }
+        
+        printf("%-20s %-10s %-10s %-8d %-8s 0x%08X\n", 
+               actual->nombre, 
                (actual->categoria == SYM_VAR ? "Variable" : "Funcion"), 
-               actual->tipo, actual->ambito, actual->direccion_memoria);
+               nombre_tipo(actual->tipo),
+               actual->ambito,
+               tam_str,
+               actual->direccion_memoria);
         actual = actual->sig;
+        count++;
     }
-    printf("==========================================================================\n");
+    printf("----------------------------------------------------------------------\n");
+    printf("Total: %d simbolos | Memoria usada: %u bytes (%u words)\n", 
+           count, mem_disponible, mem_disponible / 4);
+    printf("======================================================================\n");
 }
 
 void liberar_symtab() {

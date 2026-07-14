@@ -1,0 +1,205 @@
+% ─── Capítulo 5: Optimización ─────────────────────────────────────────────────
+\chapter{BACKEND — Optimización del AST}
+
+\section{Fundamentos Teóricos}
+
+La fase de \textbf{optimización} (Middle-end) tiene como objetivo transformar el programa en uno equivalente pero más eficiente (en velocidad de ejecución y uso de memoria). En TPP, las optimizaciones se realizan sobre el AST de manera independiente de la máquina (Machine-Independent Optimizations).
+
+Teóricamente, las optimizaciones preservan la \textbf{semántica observacional} del programa: si se introducen los mismos datos de entrada, debe producir los mismos resultados y tener los mismos efectos secundarios.
+
+\begin{infobox}[Mecánica Interna en C]
+En la implementación en C (\texttt{opt.c}), las optimizaciones de AST implican:
+\begin{enumerate}
+    \item \textbf{Recorrido Post-Orden (Bottom-up):} El optimizador utiliza recursión para llegar primero a las hojas del AST y luego subir. Esto asegura que al intentar optimizar un nodo padre, sus hijos ya estén completamente reducidos.
+    \item \textbf{Reemplazo en memoria:} Cuando un nodo (ej. \texttt{N\_OPERACION}) es optimizado a un escalar, el puntero del nodo se sobrescribe modificando su discriminador (\texttt{tipo}) a \texttt{N\_ENTERO}, evitando reestructurar agresivamente los punteros de todo el árbol.
+\end{enumerate}
+\end{infobox}
+
+\subsection{Justificación del Orden de Ejecución}
+
+En la arquitectura del compilador TPP (y en la mayoría de compiladores modernos), la \textbf{optimización del AST se ejecuta estrictamente antes que la generación del Código Intermedio (TAC)}. Esta decisión de diseño se fundamenta en tres razones principales:
+
+\begin{enumerate}
+    \item \textbf{Facilidad de manipulación matemática:} Es computacionalmente más sencillo recorrer un árbol para identificar y evaluar expresiones constantes (como \texttt{3 + 4}) que realizar el mismo análisis sobre instrucciones aplanadas y linealizadas.
+    \item \textbf{Reducción del tamaño del TAC:} Al optimizar y plegar constantes en el AST, el árbol resultante tiene menos nodos. Como consecuencia directa, el generador de TAC emitirá muchas menos cuádruplas y no desperdiciará registros temporales en cálculos redundantes.
+    \item \textbf{Desacoplamiento arquitectónico:} Realizar optimizaciones independientes de la máquina a nivel del AST garantiza que cualquier \textit{Backend} posterior (sea RV32I u otra arquitectura) reciba un insumo semánticamente simplificado, delegando al Backend solo las optimizaciones dependientes de hardware (como asignación de registros físicos).
+\end{enumerate}
+
+El compilador TPP implementa cuatro optimizaciones clásicas directamente sobre el AST:
+
+\begin{infobox}[Entrada y Salida del Optimizador]
+\textbf{Entrada:} AST anotado con direcciones de memoria \\
+\textbf{Salida:} AST transformado con expresiones simplificadas y código muerto eliminado
+\end{infobox}
+
+El optimizador trabaja en un recorrido \textbf{bottom-up} (de hojas hacia la raíz), lo que permite que los resultados de los hijos estén ya simplificados cuando se procesa el nodo padre.
+
+\section{Optimización 1: Plegado de Constantes}
+
+\subsection{Descripción}
+
+El \textbf{plegado de constantes} (\textit{constant folding}) evalúa en tiempo de compilación todas las operaciones cuyos operandos son literales constantes. El nodo \texttt{N\_OPERACION} se reemplaza directamente por un \texttt{N\_ENTERO} con el resultado.
+
+\subsection{Operaciones soportadas}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Operador} & \textbf{Antes} & \textbf{Después} \\
+\midrule
+\texttt{+} & \texttt{3 + 5} & \texttt{8} \\
+\texttt{-} & \texttt{10 - 3} & \texttt{7} \\
+\texttt{*} & \texttt{4 * 5} & \texttt{20} \\
+\texttt{/} & \texttt{10 / 2} & \texttt{5} \\
+\texttt{==} & \texttt{3 == 3} & \texttt{1} \\
+\texttt{!=} & \texttt{3 != 4} & \texttt{1} \\
+\texttt{<} & \texttt{2 < 5} & \texttt{1} \\
+\texttt{>} & \texttt{5 > 2} & \texttt{1} \\
+\bottomrule
+\end{tabular}
+\caption{Operaciones sujetas a plegado de constantes}
+\label{tab:const-fold}
+\end{table}
+
+\subsection{Implementación}
+
+\begin{lstlisting}[style=cstyle, caption={Implementación del plegado de constantes en opt.c}]
+static void plegado_constantes(NodoAST *nodo) {
+    if (nodo->tipo != N_OPERACION || !nodo->izq || !nodo->der) return;
+    if (nodo->izq->tipo != N_ENTERO || nodo->der->tipo != N_ENTERO) return;
+
+    int a = nodo->izq->val_entero;
+    int b = nodo->der->val_entero;
+    int res = 0, valido = 1;
+
+    switch (nodo->operador) {
+        case MAS:          res = a + b; break;
+        case MENOS:        res = a - b; break;
+        case MULT:         res = a * b; break;
+        case DIV:          if (b != 0) res = a / b; else valido = 0; break;
+        case IGUAL:        res = (a == b); break;
+        case DIFERENTE:    res = (a != b); break;
+        case MENOR:        res = (a < b); break;
+        case MAYOR:        res = (a > b); break;
+        case MENOR_IGUAL:  res = (a <= b); break;
+        case MAYOR_IGUAL:  res = (a >= b); break;
+        default: valido = 0; break;
+    }
+
+    if (valido) {
+        // Convertir el nodo operacion en un nodo entero constante
+        convertir_a_entero(nodo, res);
+        opt_const_fold++;
+    }
+}
+\end{lstlisting}
+
+\subsection{Ejemplo}
+
+\begin{lstlisting}[style=tppstyle, caption={Plegado de constantes en cascada}]
+entero r = 10 * 2 + 3;
+// Paso 1: 10 * 2 → 20
+// Paso 2: 20 + 3 → 23
+// Resultado: entero r = 23;
+\end{lstlisting}
+
+\section{Optimización 2: Simplificación Algebraica}
+
+\subsection{Descripción}
+
+La \textbf{simplificación algebraica} aplica identidades matemáticas para eliminar operaciones innecesarias que involucran los elementos neutros y absorbentes.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Patrón} & \textbf{Ejemplo} & \textbf{Resultado} & \textbf{Identidad} \\
+\midrule
+\texttt{x + 0} & \texttt{resultado + 0} & \texttt{resultado} & Neutro de la suma \\
+\texttt{0 + x} & \texttt{0 + resultado} & \texttt{resultado} & Neutro de la suma \\
+\texttt{x - 0} & \texttt{contador - 0} & \texttt{contador} & Neutro de la resta \\
+\texttt{x * 1} & \texttt{valor * 1} & \texttt{valor} & Neutro de la multiplicación \\
+\texttt{1 * x} & \texttt{1 * valor} & \texttt{valor} & Neutro de la multiplicación \\
+\texttt{x * 0} & \texttt{n * 0} & \texttt{0} & Absorbente de la multiplicación \\
+\texttt{0 * x} & \texttt{0 * n} & \texttt{0} & Absorbente de la multiplicación \\
+\texttt{x / 1} & \texttt{n / 1} & \texttt{n} & Neutro de la división \\
+\bottomrule
+\end{tabular}
+\caption{Identidades algebraicas aplicadas}
+\label{tab:algebraic}
+\end{table}
+
+\section{Optimización 3: Eliminación de Código Muerto}
+
+\subsection{Descripción}
+
+La \textbf{eliminación de código muerto} (\textit{dead code elimination}) detecta bloques de código que \textbf{nunca pueden ejecutarse} y los elimina del AST.
+
+\subsection{Casos detectados}
+
+\begin{lstlisting}[style=tppstyle, caption={Casos de código muerto eliminados}]
+// CASO 1: si(0) -> el bloque NUNCA se ejecuta -> eliminar
+si (0) {
+    imprimir("Nunca se ejecuta");
+}
+// => Nodo eliminado completamente del AST
+
+// CASO 2: si(1) -> SIEMPRE se ejecuta -> eliminar el si, quedar solo con bloque
+si (1) {
+    imprimir("Siempre se ejecuta");
+}
+// => Se mantiene solo: imprimir("Siempre se ejecuta")
+
+// CASO 3: mientras(0) -> bucle nunca se itera -> eliminar
+mientras (0) {
+    imprimir("Nunca se ejecuta");
+}
+// => Nodo convertido en N_ENTERO 0 (inofensivo)
+\end{lstlisting}
+
+\section{Optimización 4: Propagación de Constantes}
+
+\subsection{Descripción}
+
+La \textbf{propagación de constantes} (\textit{constant propagation}) consiste en reemplazar el uso de una variable que siempre tiene un valor conocido en tiempo de compilación por ese valor directamente. En el compilador TPP, esta optimización ocurre de forma \textbf{implícita} a través de las pasadas repetidas del optimizador: cuando una expresión es plegada a una constante, los nodos que la usan también pueden ser plegados en la siguiente pasada.
+
+\section{Informe de Optimizaciones}
+
+Al finalizar la optimización, el compilador imprime un resumen:
+
+\begin{verbatim}
+==================== OPTIMIZACION DE CODIGO ====================
+  Optimizaciones aplicadas:
+    - Plegado de constantes:       4
+    - Simplificacion algebraica:   2
+    - Eliminacion de codigo muerto:3
+  Total: 9 optimizaciones
+\end{verbatim}
+
+\section{Posibilidades de Optimización en el Código Final}
+
+La siguiente tabla muestra el impacto de las optimizaciones sobre el código ensamblador generado:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3.5cm}p{5cm}p{5cm}}
+\toprule
+\textbf{Optimización} & \textbf{Sin optimizar} & \textbf{Optimizado} \\
+\midrule
+Plegado \texttt{10 * 2 + 3} & 
+\texttt{li t0, 10} \newline \texttt{call \_\_soft\_mul} \newline \texttt{li t1, 3} \newline \texttt{add t0, t0, t1} &
+\texttt{li t0, 23} \\
+\midrule
+Algebraica \texttt{x + 0} &
+\texttt{lw t0, N(sp)} \newline \texttt{li t1, 0} \newline \texttt{add t0, t0, t1} &
+\texttt{lw t0, N(sp)} \\
+\midrule
+Código muerto \texttt{si(0)} &
+\texttt{li t0, 0} \newline \texttt{beqz t0, .Lend} \newline \texttt{[instrucciones]} \newline \texttt{.Lend:} &
+(eliminado) \\
+\bottomrule
+\end{tabular}
+\caption{Impacto de las optimizaciones en el código generado}
+\label{tab:opt-impact}
+\end{table}

@@ -1,0 +1,260 @@
+% ─── Capítulo 2: Analizador Sintáctico ────────────────────────────────────────
+\chapter{FRONTEND — Análisis Sintáctico}
+
+\section{Fundamentos Teóricos}
+
+El \textbf{análisis sintáctico} (o \textit{parsing}) es la segunda etapa de la compilación. A diferencia del lexer, que agrupa caracteres en tokens planos, el parser descubre la \textbf{estructura jerárquica} del programa. Comprueba si la secuencia lineal de tokens obedece a las reglas estructurales del lenguaje.
+
+Teóricamente, el lenguaje se modela mediante una \textbf{Gramática Libre de Contexto (CFG)}, definida por:
+\begin{itemize}
+    \item \textbf{Terminales:} Los tokens provenientes del lexer.
+    \item \textbf{No Terminales:} Variables sintácticas (ej. \textit{expresion}, \textit{declaracion}).
+    \item \textbf{Producciones:} Reglas de reemplazo (\textit{No Terminal $\rightarrow$ símbolos}).
+    \item \textbf{Símbolo Inicial:} El punto de partida (ej. \textit{programa}).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        level distance=1.2cm,
+        level 1/.style={sibling distance=4cm},
+        level 2/.style={sibling distance=2cm},
+        level 3/.style={sibling distance=1.5cm},
+        every node/.style={circle, draw, fill=tppblue!10, text=tppdark, minimum size=0.8cm, font=\small, thick},
+        edge from parent/.style={thick, draw=tppblue}
+        ]
+        \node {expr}
+            child {node {expr}
+                child {node[fill=tppgreen!10] {NUM}}
+            }
+            child {node[fill=tppgray!30, draw=gray] {+}}
+            child {node {expr}
+                child {node {expr}
+                    child {node[fill=tppgreen!10] {ID}}
+                }
+                child {node[fill=tppgray!30, draw=gray] {*}}
+                child {node {expr}
+                    child {node[fill=tppgreen!10] {NUM}}
+                }
+            };
+    \end{tikzpicture}
+    \caption{Ejemplo de Árbol de Derivación (Parse Tree) para la expresión matemática $3 + x * 5$, resolviendo la precedencia mediante la gramática.}
+    \label{fig:parse_tree}
+\end{figure}
+
+\begin{infobox}[¿Por qué es necesario el Análisis Sintáctico?]
+Una gramática regular (usada en el lexer) no puede contar ni anidar estructuras (no puede verificar que los paréntesis o llaves estén correctamente balanceados). Una CFG sí puede hacerlo. El análisis sintáctico permite:
+\begin{enumerate}
+    \item Validar que la sintaxis general es correcta (ej. un \texttt{si} seguido de \texttt{()} y \texttt{\{\}}).
+    \item Capturar precedencia y asociatividad de operadores.
+    \item Construir una representación en memoria abstracta (AST) para manipular el programa más fácilmente en el futuro.
+\end{enumerate}
+\end{infobox}
+
+\section{Implementación con Bison: \texttt{parser.y}}
+
+Para construir el parser de TPP se emplea \textbf{Bison}, que es un generador de parsers de tipo \textbf{LALR(1)} (\textit{Look-Ahead Left-to-Right, Rightmost derivation with 1 token lookahead}). Bison toma la CFG escrita en \texttt{parser.y} y genera una máquina de estados (Pushdown Automaton) en C (\texttt{parser.tab.c}).
+
+\subsection{Funcionamiento Interno (Shift/Reduce)}
+
+El parser generado por Bison funciona mediante dos operaciones principales en una pila:
+\begin{itemize}
+    \item \textbf{Shift (Desplazamiento):} Lee un token de la entrada y lo empuja a la pila sintáctica, pasando a un nuevo estado.
+    \item \textbf{Reduce (Reducción):} Cuando la cima de la pila coincide con el lado derecho de una producción, saca esos elementos de la pila y empuja el lado izquierdo (el No Terminal). En este momento se ejecuta el código C asociado (la acción semántica), que en nuestro caso \textbf{crea un nodo del AST}.
+\end{itemize}
+
+\subsection{Gramática del Lenguaje TPP}
+
+La gramática completa se define mediante reglas BNF en el archivo \texttt{parser.y}:
+
+\begin{lstlisting}[style=cstyle, caption={Reglas gramaticales principales}]
+// Punto de entrada
+programa:
+    lista_elementos { 
+        NodoAST *raiz = nuevo_nodo_programa($1);
+        // Disparar el pipeline completo de compilación
+        analizar_semantica(raiz);
+        optimizar_ast(raiz);
+        generar_codigo_intermedio(raiz);
+        generar_codigo(raiz, out);
+    }
+
+// Declaración de función
+declaracion_fun:
+    FUN ID PARI parametros PARD FLECHA tipo LLAVEI 
+    bloque_instrucciones LLAVED
+    { $$ = nuevo_nodo_declaracion_fun($2, $7, $4, $9); }
+    
+    | FUN ID PARI parametros PARD LLAVEI 
+    bloque_instrucciones LLAVED
+    { $$ = nuevo_nodo_declaracion_fun($2, 0, $4, $7); }
+
+// Declaracion de variable con tipo
+declaracion_var:
+    tipo lista_ids PUNTOCOMA
+    { $$ = nuevo_nodo_declaracion_var($1, $2); }
+
+// Estructura si/sino
+estructura_si:
+    SI PARI expresion PARD LLAVEI bloque_instrucciones LLAVED
+    { $$ = nuevo_nodo_si($3, $6, NULL); } %prec LOWER_THAN_SINO
+    
+    | SI PARI expresion PARD LLAVEI bloque_instrucciones LLAVED
+      SINO LLAVEI bloque_instrucciones LLAVED
+    { $$ = nuevo_nodo_si($3, $6, $10); }
+
+// Llamada a función
+llamada_funcion:
+    ID PARI argumentos PARD 
+    { $$ = nuevo_nodo_llamada_funcion($1, $3); }
+
+// Expresiones con precedencia
+expresion:
+    expresion MAS expresion  { $$ = nuevo_nodo_operacion(MAS, $1, $3); }
+    | expresion MENOS expresion { $$ = nuevo_nodo_operacion(MENOS, $1, $3); }
+    | expresion MULT expresion  { $$ = nuevo_nodo_operacion(MULT, $1, $3); }
+    | expresion DIV expresion   { $$ = nuevo_nodo_operacion(DIV, $1, $3); }
+    | expresion IGUAL expresion { $$ = nuevo_nodo_operacion(IGUAL, $1, $3); }
+    | expresion MENOR expresion { $$ = nuevo_nodo_operacion(MENOR, $1, $3); }
+    | NUM_ENTERO  { $$ = nuevo_nodo_entero($1); }
+    | NUM_DECIMAL { $$ = nuevo_nodo_decimal($1); }
+    | ID          { $$ = nuevo_nodo_variable($1); }
+    | CADENA      { $$ = nuevo_nodo_cadena($1); }
+    | llamada_funcion { $$ = $1; }
+\end{lstlisting}
+
+\subsection{Resolución de Ambigüedades}
+
+Bison resuelve ambigüedades mediante reglas de precedencia declaradas explícitamente:
+
+\begin{lstlisting}[style=cstyle, caption={Declaraciones de precedencia}]
+// Menor a mayor precedencia (de arriba hacia abajo)
+%left IGUAL DIFERENTE MENOR MAYOR MENOR_IGUAL MAYOR_IGUAL
+%left MAS MENOS
+%left MULT DIV MOD
+
+// Resolución del "dangling else" (sino huérfano)
+%nonassoc LOWER_THAN_SINO
+%nonassoc SINO
+\end{lstlisting}
+
+Esto garantiza que \texttt{3 + 4 * 2} se evalúe como \texttt{3 + (4 * 2) = 11} y no como \texttt{(3 + 4) * 2 = 14}.
+
+\section{Estructuras Sintácticas Soportadas}
+
+\subsection{Declaraciones de Variables}
+
+\begin{lstlisting}[style=tppstyle, caption={Formas válidas de declaración}]
+entero x;                 // Simple sin inicializacion
+entero x = 5;             // Con inicializacion
+entero x = 3 + 2;         // Con expresion
+entero arr[10];           // Arreglo de 10 enteros
+decimal pi = 3.14;        // Variable decimal
+\end{lstlisting}
+
+\subsection{Declaraciones de Funciones}
+
+\begin{lstlisting}[style=tppstyle, caption={Formas de declaración de funciones}]
+// Función sin retorno (void)
+fun saludar() {
+    imprimir("Hola");
+}
+
+// Función con parámetros y tipo de retorno
+fun sumar(entero a, entero b) -> entero {
+    retornar a + b;
+}
+
+// Función main (punto de entrada del usuario)
+fun main() {
+    entero resultado;
+    resultado = sumar(3, 4);
+    imprimir(resultado);
+}
+\end{lstlisting}
+
+\subsection{Estructuras de Control}
+
+\begin{lstlisting}[style=tppstyle, caption={Estructuras de control disponibles}]
+// Condicional
+si (x > 0) {
+    imprimir("positivo");
+} sino {
+    imprimir("negativo o cero");
+}
+
+// Bucle mientras
+mientras (i < 10) {
+    i = i + 1;
+}
+
+// Bucle para (con declaracion de variable en cabecera)
+para(entero i = 0; i < 5; i = i + 1) {
+    imprimir(arr[i]);
+}
+
+// Selección múltiple
+depende (x) {
+    caso 1: { imprimir("uno"); }
+    caso 2: { imprimir("dos"); }
+    otros:  { imprimir("otro"); }
+}
+\end{lstlisting}
+
+\section{Manejo de Errores Sintácticos}
+
+El parser implementa \textbf{recuperación de errores} para continuar el análisis aunque encuentre errores:
+
+\begin{lstlisting}[style=cstyle, caption={Recuperación de errores en el parser}]
+estructura_si:
+    SI PARI expresion PARD LLAVEI bloque_instrucciones LLAVED { ... }
+    | SI PARI error PARD LLAVEI bloque_instrucciones LLAVED {
+        yyerrok;
+        printf("=> [Panic Mode] Error en condicion del SI.\n");
+        $$ = NULL;
+    }
+
+estructura_para:
+    PARA PARI tipo ID ASIG expresion PUNTOCOMA 
+    expresion PUNTOCOMA ID ASIG expresion PARD 
+    LLAVEI bloque_instrucciones LLAVED { ... }
+    | PARA PARI error PARD LLAVEI bloque_instrucciones LLAVED {
+        yyerrok;
+        $$ = NULL;
+    }
+\end{lstlisting}
+
+La función \texttt{yyerror()} produce mensajes descriptivos con línea y columna:
+
+\begin{verbatim}
+¡Ups! Hay un problema sintáctico en tu código.
+Linea 14, Columna 11
+Detalle: syntax error cerca del elemento 'cinco'
+\end{verbatim}
+
+\section{Orquestación del Pipeline}
+
+Una vez que el parser construye el AST sin errores, el punto de entrada \texttt{programa} actúa como orquestador y dispara todas las fases sucesivas del compilador en secuencia:
+
+\begin{lstlisting}[style=cstyle, caption={Orquestación del pipeline en parser.y}]
+programa:
+    lista_elementos {
+        NodoAST *raiz = nuevo_nodo_programa($1);
+        
+        // Fase 1: Análisis Semántico
+        int errores_sem = analizar_semantica(raiz);
+        
+        if (errores_sem == 1) { // Éxito
+            // Fase 2: Optimización del AST
+            optimizar_ast(raiz);
+            
+            // Fase 3: Código Intermedio
+            generar_codigo_intermedio(raiz);
+            
+            // Fase 4: Generación de Código Final
+            FILE *out = fopen("output.s", "w");
+            generar_codigo(raiz, out);
+            fclose(out);
+        }
+    }
+\end{lstlisting}

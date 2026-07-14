@@ -1,0 +1,19 @@
+fun sumarArreglo(entero n) -> entero {
+    entero suma = 0;
+    entero arr[5];
+    arr[0] = 1;
+    arr[1] = 2;
+    arr[2] = 3;
+    arr[3] = 4;
+    arr[4] = 5;
+    para (entero i = 0; i < n; i = i + 1) {
+        suma = suma + arr[i];
+    }
+    retornar suma;
+}
+
+fun main() {
+    entero total = sumarArreglo(5);
+    imprimir("Suma 1..5:");
+    imprimir(total);
+}

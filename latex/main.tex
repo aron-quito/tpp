@@ -1,0 +1,332 @@
+\documentclass[12pt,a4paper]{report}
+
+% ─── Paquetes ──────────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}  % Latin Modern para ttfamily robusto en T1
+\usepackage{mathptmx} % Sobrescribe el roman con Times para estilo APA
+\usepackage[spanish,es-noquoting,es-noshorthands]{babel}
+\usepackage[a4paper, margin=2.54cm]{geometry} % Márgenes APA (1 pulgada = 2.54cm)
+\usepackage{setspace} % Espaciado
+\onehalfspacing % Espaciado 1.5 (doble espacio estropea mucho el código)
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{ifthen}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{fontawesome5} % Para \faOrcid
+% mdframed removido: usar tcolorbox para todas las cajas
+
+\usetikzlibrary{shapes,arrows,positioning,calc,decorations.markings,automata}
+
+% ─── Geometría ─────────────────────────────────────────────────────────────────
+\geometry{
+    top=2.5cm,
+    bottom=2.5cm,
+    left=3cm,
+    right=2.5cm
+}
+
+% ─── Colores ───────────────────────────────────────────────────────────────────
+\definecolor{tppblue}{RGB}{0,86,179}
+\definecolor{tppdark}{RGB}{20,20,40}
+\definecolor{tppgreen}{RGB}{0,128,64}
+\definecolor{tppred}{RGB}{180,30,30}
+\definecolor{tppgray}{RGB}{240,240,245}
+\definecolor{codebg}{RGB}{248,249,250}
+\definecolor{codeborder}{RGB}{200,210,220}
+\definecolor{keyword}{RGB}{0,86,179}
+\definecolor{comment}{RGB}{100,120,100}
+\definecolor{string}{RGB}{160,40,0}
+\definecolor{number}{RGB}{120,0,120}
+\definecolor{orcidlogocol}{HTML}{A6CE39}
+
+% ─── Estilo de código ──────────────────────────────────────────────────────────
+\lstdefinestyle{cstyle}{
+    language=C,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small\setstretch{1}\color{black},
+    keywordstyle=\color{keyword}\bfseries,
+    commentstyle=\color{comment}\itshape,
+    stringstyle=\color{string},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=8pt,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{codeborder},
+    framesep=4pt,
+    tabsize=4,
+    showstringspaces=false,
+    captionpos=b
+}
+
+\lstdefinestyle{tppstyle}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small\setstretch{1}\color{black},
+    keywordstyle=\color{keyword}\bfseries,
+    keywords={fun, retornar, entero, decimal, si, sino, mientras, para, imprimir, leer, depende},
+    commentstyle=\color{comment}\itshape,
+    stringstyle=\color{string},
+    morecomment=[l]{//},
+    morestring=[b]",
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=8pt,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{codeborder},
+    tabsize=4,
+    showstringspaces=false,
+    captionpos=b
+}
+
+\lstdefinestyle{asmstyle}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\small\setstretch{1}\color{black},
+    keywordstyle=\color{tppgreen}\bfseries,
+    keywords={li, lw, sw, add, addi, sub, mv, call, ret, beqz, bnez, bne, blt, slt, j, jal, slli, lui, seqz, snez, xori},
+    commentstyle=\color{comment}\itshape,
+    morecomment=[l]{\#},
+    numberstyle=\tiny\color{gray},
+    numbers=left,
+    numbersep=8pt,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{codeborder},
+    tabsize=4,
+    showstringspaces=false,
+    captionpos=b
+}
+
+\lstset{style=cstyle}
+
+% ─── Encabezado y pie de página ────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{tppblue}{\textbf{Compilador TPP}}}
+\fancyhead[R]{\small\textcolor{gray}{\nouppercase{\leftmark}}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ─── Títulos ───────────────────────────────────────────────────────────────────
+\titleformat{\chapter}[block]
+  {\normalfont\huge\bfseries\color{tppblue}}
+  {Capítulo \thechapter}{1em}{}[\titlerule]
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{tppdark}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{tppdark}}
+  {\thesubsection}{1em}{}
+
+% ─── Hipervínculos ─────────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks=true,
+    linkcolor=tppblue,
+    urlcolor=tppblue,
+    citecolor=tppblue,
+    pdftitle={Documentación del Compilador TPP},
+    pdfauthor={Cachicatari Quito Aron Rene}
+}
+
+% ─── Cajas de información (sin paquetes externos conflictivos) ───────
+\newenvironment{infobox}[1][]{
+    \vspace{1em}
+    \noindent\textbf{\textcolor{tppblue}{#1}}\par\noindent
+    \itshape
+}{
+    \vspace{1em}
+}
+
+\newenvironment{notebox}{
+    \vspace{1em}
+    \noindent\textbf{\textcolor{tppgreen}{Nota T\'ecnica}}\par\noindent
+    \itshape
+}{
+    \vspace{1em}
+}
+
+% ──────────────────────────────────────────────────────────────────────────────
+%  DOCUMENTO
+% ──────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ─── Portada ───────────────────────────────────────────────────────────────────
+% --- PORTADA ---
+\begin{titlepage}
+    \pagenumbering{gobble} % Sin numeración en portada
+    
+    \centering
+    \includegraphics[width=8cm]{img/logo-unjbg2.png}
+
+    \vspace{0.5cm}
+    {\fontsize{12}{14}\selectfont Facultad de Ingeniería\par}
+    {\fontsize{12}{14}\selectfont Escuela Profesional de Ingeniería en Informática y Sistemas\par}
+    
+    \vspace{0.5cm}
+
+    {\fontsize{14}{16}\bfseries COMPILADORES Y TEORÍA DE LENGUAJES\par}
+    {\fontsize{12}{14}\bfseries INFORME\par}
+    {\fontsize{12}{14}\bfseries Compilador final de un minilenguaje\par}
+
+    \vspace{0.5cm}
+    
+    % --- Diagrama del Compilador ---
+    \begin{center}
+    \begin{tikzpicture}[node distance=0.35cm, auto,
+        block/.style={rectangle, draw=tppblue, fill=tppblue!10, 
+                      text width=6cm, text centered, rounded corners, 
+                      minimum height=0.5cm, font=\scriptsize\bfseries},
+        arrow/.style={thick,->,>=stealth,color=tppblue}]
+        
+        \node [block] (src)    {Código Fuente (.to)};
+        \node [block] (lex)    [below=of src]  {Analizador Léxico (lexer.l)};
+        \node [block] (par)    [below=of lex]  {Analizador Sintáctico (parser.y)};
+        \node [block] (sem)    [below=of par]  {Analizador Semántico (semantic.c)};
+        \node [block] (opt)    [below=of sem]  {Optimización (opt.c)};
+        \node [block] (ir)     [below=of opt]  {Código Intermedio (ir.c)};
+        \node [block] (gen)    [below=of ir]   {Generación de Código (codegen.c)};
+        \node [block] (out)    [below=of gen]  {Código Ejecutable RV32I (output.s)};
+        
+        \draw [arrow] (src) -- (lex);
+        \draw [arrow] (lex) -- (par);
+        \draw [arrow] (par) -- (sem);
+        \draw [arrow] (sem) -- (opt);
+        \draw [arrow] (opt) -- (ir);
+        \draw [arrow] (ir) -- (gen);
+        \draw [arrow] (gen) -- (out);
+    \end{tikzpicture}
+    \end{center}
+
+    \vspace{0.5cm}
+
+    % --- Sección del Docente Centrada ---
+    \begin{center}
+        {\bfseries Docente:}\\[0.1cm]
+        Dr. Apaza Valencia Manuel Yuri
+    \end{center}
+
+    \vspace{0.5cm}
+
+    % --- Sección de Autores ---
+    \begin{flushleft}
+        {\bfseries Autor(es):}\\[0.2cm]
+        \small 
+        \textbf{Cachicatari Quito Aron Rene}, \href{https://orcid.org/0009-0001-0343-6817}{\textcolor{orcidlogocol}{\faOrcid \ 
+        \underline{0009-0001-0343-6817}}} \\ [0.15cm]
+        
+        \textbf{Chata Chino Alex Jeanpier}, \href{https://orcid.org/0009-0006-0901-569X}
+        {\textcolor{orcidlogocol}{\faOrcid \ \underline{0009-0006-0901-569X}}} \\[0.15cm]
+
+        \textbf{Condori Caljaro Luis Fernando}, \href{https://orcid.org/0009-0000-9748-1557}
+        {\textcolor{orcidlogocol}{\faOrcid \ \underline{0009-0000-9748-1557}}} \\[0.15cm]
+
+        \textbf{Mamani Catacora Johan Anibal}, \href{https://orcid.org/0009-0006-3486-7579}{\textcolor{orcidlogocol}{\faOrcid \ \underline{0009-0006-3486-7579}}} \\ [0.15cm]
+        
+        \textbf{Flores Gómez Mauricio José}, \href{https://orcid.org/0000-0002-1840-3161}
+        {\textcolor{orcidlogocol}{\faOrcid \ \underline{0000-0002-1840-3161}}} \\[0.15cm]
+        
+    \end{flushleft}
+\end{titlepage}
+
+% ─── Dedicatoria / Agradecimiento ─────────────────────────────────────────────
+\newpage
+\pagenumbering{gobble}
+\vspace*{\fill}
+\begin{flushright}
+    \begin{minipage}{0.65\textwidth}
+        \itshape
+        Agradecemos a nuestro estimado Ing.\ Manuel Apaza Valencia, que con
+        su paciencia y exigencia nos llevó a realizar este simple, pero
+        interesante compilador. Asimismo, al Ing.\ Acero, por sus enseñanzas
+        para el entendimiento y el enlace con el simulador Logisim Evolution.
+        
+        \vspace{0.6cm}
+        A todos, este proyecto es para ustedes:
+        \textit{un compilador no es difícil.}
+        
+        \vspace{0.8cm}
+        \normalfont ---\ Los autores
+    \end{minipage}
+\end{flushright}
+\vspace*{\fill}
+\newpage
+\pagenumbering{arabic}
+
+% ─── Tabla de contenidos ───────────────────────────────────────────────────────
+\tableofcontents
+\listoffigures
+\listoftables
+\newpage
+
+% ──────────────────────────────────────────────────────────────────────────────
+% INTRODUCCIÓN (sin número de capítulo)
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap00_intro}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% CAPÍTULO 1: ANTECEDENTES (definición del lenguaje, rúbrica, gramática)
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap01_antecedentes}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% CAPÍTULO 2: DESCRIPCIÓN GENERAL DEL COMPILADOR (pipeline y archivos)
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap00_introduccion}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% FRONTEND
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap01_lexico}
+\include{chapters/cap02_sintactico}
+\include{chapters/cap03_semantico}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% BACKEND
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap04_ast}
+\include{chapters/cap05_optimizacion}
+\include{chapters/cap06_intermedio}
+\include{chapters/cap07_codegen}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% METODOLOGÍA — INTEGRACIÓN CON LOGISIM
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap09_metodologia}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% COMPLICACIONES
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap10_complicaciones}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% PRUEBAS Y DEMOSTRACIONES
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap11_pruebas}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% MANUAL DE USUARIO
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap12_manual}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% CONCLUSIONES
+% ──────────────────────────────────────────────────────────────────────────────
+\include{chapters/cap08_conclusiones}
+
+\end{document}
+

@@ -1,0 +1,184 @@
+% ─── Capítulo 1: Analizador Léxico ────────────────────────────────────────────
+\chapter{FRONTEND — Análisis Léxico}
+
+\section{Fundamentos Teóricos}
+
+El \textbf{análisis léxico} es la primera fase del proceso de compilación. En esta etapa, el compilador lee el código fuente (una cadena de caracteres) y lo divide en unidades lógicas con significado propio llamadas \textbf{tokens}. 
+
+Teóricamente, el análisis léxico se basa en la teoría de \textbf{Lenguajes Regulares}. Cada categoría de token (como un identificador, un número o una palabra reservada) se describe mediante una \textbf{Expresión Regular (Regex)}. Para reconocer estas expresiones en el texto de entrada, el analizador construye un \textbf{Autómata Finito Determinista (DFA)}. El DFA consume la entrada carácter por carácter y transita entre estados hasta alcanzar un estado de aceptación, logrando aislar y clasificar la subcadena leída (el \textit{lexema}).
+
+\begin{infobox}[¿Por qué es necesario el Análisis Léxico?]
+La separación entre análisis léxico y sintáctico es crucial por tres motivos:
+\begin{enumerate}
+    \item \textbf{Eficiencia:} Aislar tareas de bajo nivel (como descartar espacios en blanco y comentarios) permite procesarlas muy rápido, reduciendo la carga del parser sintáctico.
+    \item \textbf{Simplicidad:} El parser sintáctico trabaja con unidades abstractas (tokens) en lugar de lidiar con caracteres crudos.
+    \item \textbf{Portabilidad:} Las reglas específicas de codificación de caracteres y saltos de línea quedan contenidas en el lexer.
+\end{enumerate}
+\end{infobox}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        shorten >=2pt, >=stealth, on grid,
+        state/.style={circle, draw=tppblue, fill=tppblue!10, text=tppdark, minimum size=1.0cm, font=\small\bfseries, thick, inner sep=0pt},
+        accept/.style={circle, draw=tppgreen!80!black, double, fill=tppgreen!10, text=tppdark, minimum size=1.0cm, font=\small\bfseries, thick, inner sep=0pt, double distance=1.5pt}
+    ]
+        % ── Estado Inicial ──────────────────────────────────────────────
+        \node[state, initial, initial text=\textbf{inicio}] (q0) at (0,0) {$q_0$};
+
+        % ── Rama 1: IDENTIFICADORES (arriba) ─────────────────────────
+        \node[accept] (q1) at (4, 2.5) {$q_1$};
+        \draw[->, thick, tppblue]
+            (q0) edge[bend left=15] node[above left, font=\footnotesize] {\texttt{[a-zA-Z\_]}} (q1);
+        \draw[->, thick, tppblue]
+            (q1) edge[loop right, looseness=6] node[right, font=\footnotesize] {\texttt{[a-zA-Z0-9\_]}} (q1);
+
+        % ── Rama 2a: ENTEROS (medio) ──────────────────────────────────
+        \node[accept] (q2) at (4, 0) {$q_2$};
+        \draw[->, thick, tppblue]
+            (q0) edge node[above, font=\footnotesize] {\texttt{[0-9]}} (q2);
+        \draw[->, thick, tppblue]
+            (q2) edge[loop above, looseness=6] node[above, font=\footnotesize] {\texttt{[0-9]}} (q2);
+
+        % ── Rama 2b: DECIMALES (q2 → punto → q3 → dígitos → q4 acepta)
+        \node[state]  (q3) at (7, 0) {$q_3$};
+        \node[accept] (q4) at (10, 0) {$q_4$};
+        \draw[->, thick, tppblue]
+            (q2) edge node[above, font=\footnotesize] {\texttt{.}} (q3);
+        \draw[->, thick, tppblue]
+            (q3) edge node[above, font=\footnotesize] {\texttt{[0-9]}} (q4);
+        \draw[->, thick, tppblue]
+            (q4) edge[loop above, looseness=6] node[above, font=\footnotesize] {\texttt{[0-9]}} (q4);
+
+        % ── Rama 3: COMENTARIOS // (abajo) ────────────────────────────
+        \node[state]  (q5) at (4,  -2.5) {$q_5$};
+        \node[state]  (q6) at (7,  -2.5) {$q_6$};
+        \node[accept] (q7) at (10, -2.5) {$q_7$};
+        \draw[->, thick, tppred]
+            (q0) edge[bend right=15] node[below left, font=\footnotesize] {\texttt{/}} (q5);
+        \draw[->, thick, tppred]
+            (q5) edge node[above, font=\footnotesize] {\texttt{/}} (q6);
+        \draw[->, thick, tppred]
+            (q6) edge[loop above, looseness=6] node[above, font=\footnotesize] {\texttt{[{\textasciicircum}\textbackslash n]}} (q6);
+        \draw[->, thick, tppred]
+            (q6) edge node[above, font=\footnotesize] {\texttt{\textbackslash n}} (q7);
+
+    \end{tikzpicture}
+    \caption{%
+        \textbf{Autómata Finito Determinista (DFA) del Lexer de TPP.}
+        Los estados con doble borde (\textcolor{tppgreen!70!black}{verde}) son \textbf{estados de aceptación}.
+        Rama superior (\textcolor{tppblue}{azul}): $q_0 \to q_1$, identificador o palabra reservada.
+        Rama media: $q_0 \to q_2$, entero; $q_2 \xrightarrow{.} q_3 \to q_4$, decimal.
+        Rama inferior (\textcolor{tppred}{rojo}): $q_0 \to q_5 \to q_6 \to q_7$, comentario de línea.
+    }
+    \label{fig:dfa_full}
+\end{figure}
+
+\section{Implementación con Flex: \texttt{lexer.l}}
+
+En el compilador TPP, el análisis léxico se ha delegado a \textbf{Flex} (\textit{Fast Lexical Analyzer Generator}). Flex lee el archivo \texttt{lexer.l}, compila las expresiones regulares internamente convirtiéndolas primero en un Autómata Finito No Determinista (NFA) mediante la construcción de Thompson, y luego lo convierte a un DFA equivalente optimizado. Este DFA se plasma en código C (el archivo \texttt{lex.yy.c}) que exporta la función \texttt{yylex()}.
+
+\subsection{Configuración y Expresiones Regulares Base}
+
+El archivo inicia con código C que será inyectado directamente en el analizador generado, seguido de la declaración de macros de Flex:
+
+\begin{lstlisting}[style=cstyle, caption={Sección de configuración del lexer}]
+%{
+    #include "parser.tab.h"
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    
+    // Contador de columna para reportar errores precisamente
+    int columna = 1;
+    
+    // Acción ejecutada ANTES de cada token: avanza el contador de columna
+    #define YY_USER_ACTION columna += yyleng;
+%}
+
+%option yylineno    // Habilita el conteo automático de saltos de línea (\n)
+%option noyywrap    // No encadenar múltiples archivos fuente
+
+// Expresiones regulares base (macros)
+DIGITO [0-9]
+LETRA  [a-zA-Z]
+\end{lstlisting}
+
+La directiva \texttt{YY\_USER\_ACTION} es esencial para el rastreo de errores: antes de que Flex ejecute la acción de cualquier regla, esta directiva actualiza la posición actual de la columna sumando \texttt{yyleng} (la longitud del lexema detectado).
+
+\subsection{Reglas de Producción Léxica}
+
+Las reglas léxicas definen el patrón a buscar y el código C a ejecutar. Flex utiliza el principio de \textbf{Longitud Máxima (Maximal Munch)}: intentará leer tantos caracteres como sea posible mientras la expresión regular siga coincidiendo. Si dos reglas coinciden con la misma longitud, se prefiere la regla que fue definida primero.
+
+\begin{lstlisting}[style=cstyle, caption={Reglas para palabras reservadas e identificadores}]
+// 1. PALABRAS RESERVADAS (Deben ir primero por el principio de prioridad)
+"fun"       { return FUN; }
+"si"        { return SI; }
+"sino"      { return SINO; }
+
+// 2. NÚMEROS (Uso del cierre positivo + para dígitos)
+{DIGITO}+                { yylval.num_entero = atoi(yytext);  
+                           return NUM_ENTERO; }
+{DIGITO}+"."{DIGITO}+    { yylval.num_decimal = atof(yytext); 
+                           return NUM_DECIMAL; }
+
+// 3. IDENTIFICADORES (Una letra seguida de 0 o más letras o números)
+{LETRA}({LETRA}|{DIGITO})* { yylval.cadena = strdup(yytext); 
+                              return ID; }
+\end{lstlisting}
+
+\begin{notebox}
+El atributo \texttt{yylval} es el puente de datos entre el Lexer y el Parser (definido como un \texttt{union} en Bison). Cuando reconocemos un número o un identificador, convertimos el lexema bruto \texttt{yytext} (un arreglo de \texttt{char}) a su valor correspondiente numérico o creamos una copia en memoria usando \texttt{strdup}, y lo almacenamos en \texttt{yylval} antes de retornar el token.
+\end{notebox}
+
+\subsection{Tabla Completa de Tokens}
+
+\begin{table}[H]
+\centering
+\begin{longtable}{lll}
+\toprule
+\textbf{Categoría} & \textbf{Patrón Regular} & \textbf{Acción (Token/Ignorar)} \\
+\midrule
+\endfirsthead
+\multicolumn{3}{c}{\tablename\ \thetable{} -- continuación} \\
+\toprule
+\textbf{Categoría} & \textbf{Patrón Regular} & \textbf{Acción (Token/Ignorar)} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{Continúa...} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Palabras reservadas & \texttt{"fun", "si", "sino"...} & \texttt{FUN, SI, SINO...} \\
+Literales Enteros & \texttt{[0-9]+} & \texttt{NUM\_ENTERO} \\
+Literales Decimales & \texttt{[0-9]+.[0-9]+} & \texttt{NUM\_DECIMAL} \\
+Cadenas de texto & \texttt{"([\^{}\textbackslash"]|\textbackslash.)*"} & \texttt{CADENA} \\
+Identificadores & \texttt{[a-zA-Z][a-zA-Z0-9]*} & \texttt{ID} \\
+Operadores aritm. & \texttt{+, -, *, /, \%} & \texttt{MAS, MENOS, MULT, DIV, MOD} \\
+Asignación & \texttt{=} & \texttt{ASIG} \\
+Operadores relac. & \texttt{==, !=, <, >, <=, >=} & \texttt{IGUAL, DIFERENTE, ...} \\
+Puntero de retorno & \texttt{->} & \texttt{FLECHA} \\
+Delimitadores & \texttt{(, ), \{, \}, [, ]} & \texttt{PARI, PARD, LLAVEI, LLAVED...} \\
+Puntuación & \texttt{; , :} & \texttt{PUNTOCOMA, COMA, DOS\_PUNTOS} \\
+\midrule
+Comentarios & \texttt{//.*} & \textit{Ignorado (skip)} \\
+Espacios & \texttt{[ \textbackslash t\textbackslash n\textbackslash r]+} & \textit{Ignorado (skip)} \\
+\end{longtable}
+\caption{Mapeo de expresiones regulares a Tokens en TPP}
+\label{tab:tokens}
+\end{table}
+
+\section{Detección y Manejo de Errores Léxicos}
+
+Una característica robusta del analizador léxico de TPP es su capacidad de recuperarse ante caracteres no reconocidos. Se utiliza la regla universal de un punto (\texttt{.}) al final del archivo \texttt{lexer.l}. Puesto que Flex da prioridad a las reglas definidas antes o a las de mayor longitud, esta regla de \textit{fallback} o comodín solo atrapa caracteres inválidos (por ejemplo \texttt{@}, \texttt{\#} o \texttt{\_}).
+
+\begin{lstlisting}[style=cstyle, caption={Regla general de manejo de errores léxicos}]
+.  { 
+    fprintf(stderr, 
+        "Error Léxico en la línea %d, columna %d: Carácter inválido '%s'\n", 
+        yylineno, columna - (int)yyleng, yytext);
+}
+\end{lstlisting}
+
+Esta técnica permite al compilador advertir al programador con gran precisión posicional sin colgarse abruptamente, permitiendo eventualmente al parser descubrir errores de cascada en caso de omisiones léxicas severas.

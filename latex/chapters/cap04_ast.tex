@@ -1,0 +1,275 @@
+% ─── Capítulo 4: AST ──────────────────────────────────────────────────────────
+\chapter{BACKEND — El Árbol Sintáctico Abstracto (AST)}
+
+\section{Fundamentos Teóricos: AST vs Parse Tree}
+
+El \textbf{Árbol Sintáctico Abstracto (AST)} es la estructura de datos central que divide el Frontend del Backend en el compilador. 
+
+Teóricamente, durante el análisis sintáctico se forma implícitamente un \textit{Parse Tree} (Árbol de Análisis Sintáctico Clásico), el cual contiene absolutamente todos los terminales y no terminales de la gramática (incluyendo paréntesis, corchetes, puntos y comas). Sin embargo, un Parse Tree es demasiado ineficiente para el análisis posterior.
+
+El AST es una versión "resumida" y destilada de este árbol que:
+\begin{itemize}
+    \item Preserva únicamente la \textbf{estructura lógica} y la precedencia matemática.
+    \item Elimina tokens superfluos que solo sirvieron para guiar al parser (como \texttt{;}, \texttt{(}, \texttt{\{}).
+    \item Sirve como \textbf{interfaz universal}. Gracias al AST, si mañana deseamos que TPP compile a ARM en lugar de RISC-V, solo necesitamos reemplazar el Backend; y si deseamos cambiar la sintaxis a inglés, solo reemplazamos el Frontend. El AST se mantiene inmutable.
+\end{itemize}
+
+Para procesar el AST en el Backend, el compilador utiliza \textbf{Recorridos en Profundidad (DFS - Depth First Search)}. Una función recursiva (\texttt{visitar\_nodo}) desciende primero hasta las hojas del árbol antes de procesar la raíz.
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    >=stealth,
+    ptnode/.style={circle, draw=gray!70, fill=gray!10, minimum size=0.9cm, font=\footnotesize, thick},
+    ptleaf/.style={font=\footnotesize\ttfamily, text=tppdark},
+    astnode/.style={rectangle, rounded corners=3pt, draw=tppblue, fill=tppblue!12, minimum width=1.5cm, minimum height=0.6cm, font=\footnotesize\bfseries, thick},
+    astleaf/.style={rectangle, rounded corners=3pt, draw=tppgreen!80!black, fill=tppgreen!10, minimum width=1.1cm, minimum height=0.55cm, font=\footnotesize}
+]
+% ── PARSE TREE (lado izquierdo, coords absolutas) ──────────────────────────
+\def\ptX{0}  % centro del parse tree
+
+% Nivel 0 (raíz)
+\node[ptnode] (sent) at (\ptX, 0) {\textit{sent}};
+
+% Nivel 1
+\node[ptnode] (decl) at (\ptX-3.0, -1.4) {\textit{decl}};
+\node[ptnode] (id)   at (\ptX-1.0, -1.4) {\textit{id}};
+\node[ptleaf] (eq)   at (\ptX+0.8, -1.4) {\texttt{=}};
+\node[ptnode] (expr) at (\ptX+2.5, -1.4) {\textit{expr}};
+\node[ptleaf] (sc)   at (\ptX+4.0, -1.4) {\texttt{;}};
+
+% Nivel 2
+\node[ptleaf] (ent)  at (\ptX-3.0, -2.7) {\texttt{entero}};
+\node[ptleaf] (x1)   at (\ptX-1.0, -2.7) {\texttt{x}};
+\node[ptnode] (e1)   at (\ptX+1.5, -2.7) {\textit{e}};
+\node[ptleaf] (plus) at (\ptX+2.5, -2.7) {\texttt{+}};
+\node[ptnode] (e2)   at (\ptX+3.5, -2.7) {\textit{e}};
+
+% Nivel 3
+\node[ptleaf] (n3)   at (\ptX+1.5, -3.8) {\texttt{3}};
+\node[ptleaf] (n5)   at (\ptX+3.5, -3.8) {\texttt{5}};
+
+% Aristas Parse Tree
+\draw[gray, thick] (sent)--(decl) (sent)--(id) (sent)--(eq)
+                   (sent)--(expr) (sent)--(sc);
+\draw[gray, thick] (decl)--(ent) (id)--(x1);
+\draw[gray, thick] (expr)--(e1) (expr)--(plus) (expr)--(e2);
+\draw[gray, thick] (e1)--(n3) (e2)--(n5);
+
+% Etiqueta
+\node[font=\small\bfseries, text=tppdark] at (\ptX, 0.9) {Parse Tree clásico};
+
+% ── AST (lado derecho, coords absolutas) ────────────────────────────────────
+\def\astX{10}  % centro del AST
+
+% Nivel 0
+\node[astnode] (asig) at (\astX, 0) {ASIGNAR};
+
+% Nivel 1
+\node[astleaf] (varx)  at (\astX-2.0, -1.8) {\texttt{x}};
+\node[astnode] (addop) at (\astX+1.5, -1.8) {\texttt{+}};
+
+% Nivel 2
+\node[astleaf] (l3) at (\astX+0.5, -3.2) {\texttt{3}};
+\node[astleaf] (l5) at (\astX+2.5, -3.2) {\texttt{5}};
+
+% Aristas AST
+\draw[->, tppblue, thick] (asig)--(varx);
+\draw[->, tppblue, thick] (asig)--(addop);
+\draw[->, tppblue, thick] (addop)--(l3);
+\draw[->, tppblue, thick] (addop)--(l5);
+
+% Etiqueta
+\node[font=\small\bfseries, text=tppdark] at (\astX, 0.9) {AST equivalente};
+
+% Divisor central
+\draw[dashed, gray!60, thick] (6.5, 1.2)--(6.5,-4.2);
+
+\end{tikzpicture}
+\caption{%
+    Comparación entre el \textbf{Parse Tree clásico} (izquierda) y el \textbf{AST generado por TPP} (derecha)
+    para la sentencia \texttt{entero x = 3 + 5;}.
+    El AST descarta nodos superfluos (\texttt{;}, \texttt{=}, tipo \texttt{entero}, nodos intermedios)
+    y conserva únicamente la estructura lógica: asignación, variable y expresión sumada.
+}
+\label{fig:ast_vs_parsetree}
+\end{figure}
+
+% ──────────────────────────────────────────────────────────────────────────────
+% FIGURA: AST de un programa con función
+% ──────────────────────────────────────────────────────────────────────────────
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    >=stealth,
+    node/.style={rectangle, rounded corners=4pt, draw=tppblue, fill=tppblue!12,
+                 minimum width=2.6cm, minimum height=0.7cm, font=\small\bfseries, thick},
+    leaf/.style={rectangle, rounded corners=4pt, draw=tppgreen!80!black, fill=tppgreen!10,
+                 minimum width=1.5cm, minimum height=0.65cm, font=\small}
+]
+% Nivel 0: función principal
+\node[node] (fn)   at (5, 0)    {N\_FUNCION \texttt{main}};
+
+% Nivel 1: dos hijos
+\node[node] (decl) at (2, -1.8) {N\_DECLARAR \texttt{resultado}};
+\node[node] (imp)  at (8, -1.8) {N\_IMPRIMIR};
+
+% Nivel 2 bajo DECLARAR
+\node[leaf] (tipo) at (0.5, -3.4) {\texttt{entero}};
+\node[node] (op)   at (3.5, -3.4) {N\_OPERACION \texttt{*}};
+
+% Nivel 2 bajo IMPRIMIR
+\node[leaf] (rvar) at (8, -3.4)   {\texttt{"resultado"}};
+
+% Nivel 3 bajo OPERACION
+\node[leaf] (n10)  at (2.5, -5.0) {\texttt{10}};
+\node[leaf] (n2)   at (4.5, -5.0) {\texttt{2}};
+
+% Aristas
+\draw[->, tppblue, thick] (fn)  --(decl);
+\draw[->, tppblue, thick] (fn)  --(imp);
+\draw[->, tppblue, thick] (decl)--(tipo);
+\draw[->, tppblue, thick] (decl)--(op);
+\draw[->, tppblue, thick] (imp) --(rvar);
+\draw[->, tppblue, thick] (op)  --(n10);
+\draw[->, tppblue, thick] (op)  --(n2);
+
+\end{tikzpicture}
+\caption{%
+    \textbf{AST generado por TPP} para \texttt{fun main()\{ entero resultado = 10*2; imprimir(resultado); \}}.
+    Nodos azules = nodos internos con semántica;
+    nodos verdes = hojas terminales (literales o identificadores).
+}
+\label{fig:ast_funcion}
+\end{figure}
+
+\section{Estructura del Nodo}
+
+Todos los nodos del AST comparten la misma estructura en memoria:
+
+\begin{lstlisting}[style=cstyle, caption={Definición del nodo AST en ast.h}]
+typedef struct NodoAST {
+    TipoNodo tipo;           // Discriminador: qué tipo de nodo es
+
+    // Ramas (hijos)
+    struct NodoAST *izq;     // Hijo izquierdo
+    struct NodoAST *der;     // Hijo derecho
+    struct NodoAST *centro;  // Bloque SINO (si/sino) o paso (para)
+    struct NodoAST *adicional; // Cuerpo del para
+
+    // Campo multipropósito
+    int operador;            // Token del operador (+, -, <, etc.)
+                             // O tipo de la declaración (TIPO_ENTERO, etc.)
+
+    // Valores de hoja
+    int val_entero;          // Valor entero literal O dirección de memoria
+    double val_decimal;      // Valor decimal literal
+    char *nombre_var;        // Nombre de variable/función
+    char *val_cadena;        // Literal de cadena
+} NodoAST;
+\end{lstlisting}
+
+\begin{notebox}
+El campo \texttt{val\_entero} tiene \textbf{doble propósito}: almacena el valor de literales enteros (\texttt{N\_ENTERO}), y después del análisis semántico almacena la \textbf{dirección de memoria} (offset desde \texttt{sp}) para variables, arreglos y parámetros.
+\end{notebox}
+
+\section{Tipos de Nodo}
+
+\begin{table}[H]
+\centering
+\begin{longtable}{lp{4cm}p{7cm}}
+\toprule
+\textbf{TipoNodo} & \textbf{Descripción} & \textbf{Hijos principales} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{TipoNodo} & \textbf{Descripción} & \textbf{Hijos principales} \\
+\midrule
+\endhead
+\midrule
+\endfoot
+\bottomrule
+\endlastfoot
+\texttt{N\_PROGRAMA} & Raíz del árbol & izq: lista elementos \\
+\texttt{N\_LISTA\_ELEMENTOS} & Lista de instrucciones & izq, der: elementos \\
+\texttt{N\_ENTERO} & Literal entero & val\_entero \\
+\texttt{N\_DECIMAL} & Literal decimal & val\_decimal \\
+\texttt{N\_CADENA} & Literal cadena & val\_cadena \\
+\texttt{N\_VARIABLE} & Uso de variable & nombre\_var, val\_entero (offset) \\
+\texttt{N\_OPERACION} & Operación binaria & izq, der, operador \\
+\texttt{N\_ASIGNACION} & Asignación & nombre\_var, izq: expresión \\
+\texttt{N\_DECLARACION\_VAR} & Declaración de variable & operador: tipo, izq: lista \\
+\texttt{N\_DECLARACION\_ARREGLO} & Declaración de arreglo & nombre\_var, val\_entero: tamaño \\
+\texttt{N\_ACCESO\_ARREGLO} & Acceso arr[i] & nombre\_var, izq: índice \\
+\texttt{N\_ASIGNACION\_ARREGLO} & Asignación arr[i]=v & nombre\_var, izq: índice, der: valor \\
+\texttt{N\_SI} & Condicional si/sino & izq: cond, der: si, centro: sino \\
+\texttt{N\_MIENTRAS} & Bucle mientras & izq: cond, der: cuerpo \\
+\texttt{N\_PARA} & Bucle para & izq: init, der: cond, centro: paso, adicional: cuerpo \\
+\texttt{N\_IMPRIMIR} & Instrucción imprimir & izq: lista impresión \\
+\texttt{N\_LEER} & Instrucción leer & nombre\_var \\
+\texttt{N\_RETORNAR} & Instrucción retornar & izq: expresión \\
+\texttt{N\_DECLARACION\_FUN} & Declaración de función & nombre\_var, operador: tipo retorno, izq: params, der: cuerpo \\
+\texttt{N\_LLAMADA\_FUNCION} & Llamada a función & nombre\_var, izq: argumentos \\
+\texttt{N\_PARAMETRO} & Parámetro formal & nombre\_var, operador: tipo \\
+\texttt{N\_LISTA\_PARAMETROS} & Lista de parámetros & izq, der \\
+\texttt{N\_LISTA\_ARGUMENTOS} & Lista de argumentos & izq, der \\
+\texttt{N\_DEPENDE} & Switch/depende & izq: expr, der: casos \\
+\texttt{N\_CASO} & Caso dentro de depende & izq: valor, der: bloque \\
+\end{longtable}
+\caption{Tipos de nodos del AST}
+\label{tab:tipos-nodo}
+\end{table}
+
+\section{Ejemplo de AST}
+
+Para el programa:
+\begin{lstlisting}[style=tppstyle]
+entero x = 3 + 5;
+imprimir(x);
+\end{lstlisting}
+
+El AST resultante es:
+\begin{verbatim}
+[Programa / Nodo Raiz]
+  | [Lista Elementos / Instrucciones]
+  |   | [Declaracion Var] Tipo: 'entero'
+  |   |   | [Asignacion] a variable 'x'
+  |   |   |   | [Operacion] '+'
+  |   |   |   |   | [Entero] 3
+  |   |   |   |   | [Entero] 5
+  |   | [Imprimir]
+  |   |   | [Variable] x
+\end{verbatim}
+
+Después del \textbf{plegado de constantes}, el nodo \texttt{N\_OPERACION} se convierte directamente en \texttt{[Entero] 8}.
+
+\section{Construcción de Nodos}
+
+Cada tipo de nodo tiene su función constructora en \texttt{ast.c}:
+
+\begin{lstlisting}[style=cstyle, caption={Funciones constructoras de nodos del AST}]
+NodoAST *nuevo_nodo_entero(int valor) {
+    NodoAST *nodo = crear_nodo(N_ENTERO);
+    nodo->val_entero = valor;
+    return nodo;
+}
+
+NodoAST *nuevo_nodo_operacion(int operador, NodoAST *izq, NodoAST *der) {
+    NodoAST *nodo = crear_nodo(N_OPERACION);
+    nodo->operador = operador;
+    nodo->izq = izq;
+    nodo->der = der;
+    return nodo;
+}
+
+NodoAST *nuevo_nodo_declaracion_fun(char *nombre, int tipo_retorno,
+                                     NodoAST *parametros, NodoAST *bloque) {
+    NodoAST *nodo = crear_nodo(N_DECLARACION_FUN);
+    nodo->nombre_var = strdup(nombre);
+    nodo->operador = tipo_retorno;  // 0 = void, 268 = entero, etc.
+    nodo->izq = parametros;
+    nodo->der = bloque;
+    return nodo;
+}
+\end{lstlisting}

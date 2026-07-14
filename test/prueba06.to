@@ -1,0 +1,6 @@
+entero a = 10 * 2 + 3;
+entero b = a + 0;
+entero c = 1 * a ;
+imprimir ( a ) ;
+imprimir ( b ) ;
+imprimir ( c ) ;

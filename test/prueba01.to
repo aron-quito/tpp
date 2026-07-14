@@ -1,0 +1,10 @@
+// Prueba b s i c a : variables , o p e r a c i o n e s y salida
+entero a = 10;
+entero b = 3;
+entero resultado = a + b ;
+imprimir ( " Suma : " ) ;
+imprimir ( resultado ) ;
+
+resultado = a * b ;
+imprimir ( " Producto : " ) ;
+imprimir ( resultado ) ;

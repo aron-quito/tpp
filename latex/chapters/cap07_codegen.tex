@@ -1,0 +1,409 @@
+% ─── Capítulo 7: Generación de Código ─────────────────────────────────────────
+\chapter{BACKEND — Generación de Código RV32I}
+
+\section{Fundamentos Teóricos: Arquitectura RISC-V RV32I}
+
+La \textbf{generación de código} es la fase final y más concreta del compilador: traduce el AST optimizado a instrucciones de máquina reales para una arquitectura específica. En TPP, el objetivo es la ISA (\textit{Instruction Set Architecture}) \textbf{RISC-V RV32I}.
+
+\textbf{RISC-V} es una arquitectura de conjunto reducido de instrucciones (RISC) de código abierto. La variante \textbf{RV32I} es la base de 32 bits que incluye únicamente instrucciones enteras: cargas/almacenamientos (\texttt{lw}/\texttt{sw}), aritmética (\texttt{add}/\texttt{sub}), lógica, saltos condicionales (\texttt{beqz}/\texttt{bnez}) e incondicionales (\texttt{j}). No incluye multiplicación (\texttt{mul}), que forma parte de la extensión M.
+
+\subsection{Registros Arquitectónicos RV32I}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Registro} & \textbf{Alias} & \textbf{Propósito (ABI)} & \textbf{Callee-Saved} \\
+\midrule
+\texttt{x0} & \texttt{zero} & Siempre cero & N/A \\
+\texttt{x1} & \texttt{ra} & Return Address (dirección de retorno) & No \\
+\texttt{x2} & \texttt{sp} & Stack Pointer & Sí \\
+\texttt{x5--x7} & \texttt{t0--t2} & Temporales (uso general) & No \\
+\texttt{x10--x11} & \texttt{a0--a1} & Argumentos/Retorno de función & No \\
+\texttt{x28--x31} & \texttt{t3--t6} & Temporales adicionales & No \\
+\bottomrule
+\end{tabular}
+\caption{Registros utilizados por el compilador TPP en RV32I}
+\label{tab:registros}
+\end{table}
+
+\subsection{Convención de Llamadas (Calling Convention)}
+
+La \textbf{convención de llamadas} define los contratos que el compilador debe respetar al invocar una función:
+\begin{itemize}
+    \item Los \textbf{argumentos} se pasan en registros \texttt{a0}, \texttt{a1}, \texttt{a2}... en orden.
+    \item El \textbf{valor de retorno} se deposita en \texttt{a0} antes de ejecutar \texttt{ret}.
+    \item El \textbf{return address (ra)} es almacenado en la pila antes de llamar a una subfunción (para no perder el camino de vuelta).
+    \item El \textbf{stack pointer (sp)} debe quedar exactamente en el mismo valor antes y después de la llamada (responsabilidad del \textit{caller} o del \textit{callee}, según el ABI).
+\end{itemize}
+
+En TPP, el compilador sigue un modelo simplificado: todas las variables tienen offsets fijos calculados en tiempo de compilación por \texttt{symtab.c}, eliminando la necesidad de ajustar \texttt{sp} en cada llamada.
+
+\begin{infobox}[Entrada y Salida del Generador de Código]
+\textbf{Entrada:} AST optimizado con nodos anotados con direcciones de memoria \\
+\textbf{Salida:} Archivo \texttt{output.s} con instrucciones RISC-V RV32I ensamblables
+\end{infobox}
+
+\section{Modelo de Memoria}
+
+\subsection{Stack Único Compartido}
+
+El compilador TPP usa un modelo de memoria basado en un \textbf{stack único estático}. Todas las variables (globales, locales, parámetros de funciones) coexisten en el mismo stack frame, identificadas por su offset fijo desde \texttt{sp}:
+
+\begin{verbatim}
+sp+0   → variable global 'a' (primera declarada)
+sp+4   → variable global 'c'
+sp+8   → ra de función 'duplicar' (.ra_duplicar)
+sp+12  → parámetro 'x' de duplicar
+sp+16  → variable local 'res' de duplicar
+sp+20  → ra de función 'main' (.ra_main)
+sp+24  → variable local 'b' de main
+sp+28  → ra del entry point
+\end{verbatim}
+
+El stack pointer \texttt{sp} se inicializa en la RAM del procesador Logisim. La función de entrada \texttt{main:} reserva espacio para \textbf{todos} los offsets calculados por el análisis semántico:
+
+\begin{lstlisting}[style=asmstyle, caption={Prólogo del entry point}]
+main:
+    li   sp, 0x0FFC      # Inicializar SP al tope de RAM (4KB)
+    addi sp, sp, -N      # N = memoria_total calculada por symtab
+    sw   ra, M(sp)       # Guardar return address del entry point
+    # Inicializar variables globales...
+    call __user_main     # Llamar al main del usuario
+    lw   ra, M(sp)
+    addi sp, sp, N
+.halt_loop:
+    j .halt_loop         # Bucle infinito (halt del procesador)
+\end{lstlisting}
+
+\section{Generación Bifásica para Funciones}
+
+Para evitar que el procesador ejecute el cuerpo de las funciones en caída libre después del \texttt{halt\_loop}, el compilador implementa una \textbf{generación en dos pasadas}:
+
+\begin{lstlisting}[style=cstyle, caption={Generación bifásica en codegen.c}]
+void generar_codigo(NodoAST *raiz, FILE *out) {
+    // PASADA 1: Emitir todo lo que NO es función
+    //   (inicializaciones globales, entry point, etc.)
+    generar_nodo_sin_funciones(raiz, out);
+    
+    // PASADA 2: Emitir solo las declaraciones de funciones
+    //   (van DESPUÉS del halt_loop para que no se ejecuten inline)
+    generar_solo_funciones(raiz, out);
+}
+\end{lstlisting}
+
+El ensamblador resultante tiene esta estructura:
+
+\begin{lstlisting}[style=asmstyle, caption={Estructura del output.s generado}]
+# ---- Rutinas de soporte ----
+__print_str:  ...
+__soft_mul:   ...
+__print_num:  ...
+
+# ---- Entry point ----
+main:
+    addi sp, sp, -N
+    # Inicializar variables globales
+    call __user_main
+    lw ra, ...
+    addi sp, sp, N
+.halt_loop:
+    j .halt_loop
+
+# ---- Funciones del usuario (después del halt) ----
+.globl mi_funcion
+mi_funcion:
+    sw ra, R(sp)       # Prólogo: guardar ra
+    # Cuerpo de la función
+    lw ra, R(sp)       # Epílogo: restaurar ra
+    ret
+
+.globl __user_main
+__user_main:
+    sw ra, M(sp)
+    # Cuerpo del main del usuario
+    lw ra, M(sp)
+    ret
+\end{lstlisting}
+
+\section{Rutinas de Soporte Emitidas Automáticamente}
+
+El generador emite automáticamente tres rutinas de soporte al inicio del archivo:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Rutina} & \textbf{Propósito} & \textbf{Parámetros} \\
+\midrule
+\texttt{\_\_print\_str} & Imprime cadena en TTY Logisim & \texttt{a0} = puntero a cadena \\
+\texttt{\_\_soft\_mul} & Multiplicación por software & \texttt{a0, a1} = factores \\
+\texttt{\_\_print\_num} & Imprime entero como ASCII & \texttt{a0} = número a imprimir \\
+\bottomrule
+\end{tabular}
+\caption{Rutinas de soporte generadas automáticamente}
+\label{tab:rutinas}
+\end{table}
+
+\subsection{Multiplicador por software}
+
+Dado que la ISA RV32I base no incluye instrucción \texttt{mul}, el compilador implementa la multiplicación como una suma repetida:
+
+\begin{lstlisting}[style=asmstyle, caption={Multiplicador por software: a0 = a0 * a1}]
+__soft_mul:
+    li  t0, 0         # acumulador = 0
+    li  t1, 0         # contador   = 0
+.mul_loop:
+    beq t1, a1, .mul_end  # si contador == a1, terminar
+    add t0, t0, a0        # acumulador += a0
+    addi t1, t1, 1
+    j   .mul_loop
+.mul_end:
+    mv  a0, t0        # retornar resultado en a0
+    ret
+\end{lstlisting}
+
+\section{Generación por Tipo de Nodo}
+
+\subsection{Expresiones Aritméticas}
+
+La función \texttt{traducir\_expresion()} genera código para cualquier expresión y deposita el resultado en un registro temporal:
+
+\begin{lstlisting}[style=cstyle, caption={Generación de expresiones en codegen.c}]
+static void traducir_expresion(NodoAST *nodo, FILE *out, int target_reg) {
+    switch (nodo->tipo) {
+        case N_ENTERO:
+            fprintf(out, "    li t%d, %d\n", target_reg, nodo->val_entero);
+            break;
+        
+        case N_VARIABLE:
+            // val_entero contiene el offset desde sp (anotado por semantic.c)
+            fprintf(out, "    lw t%d, %d(sp)\n", target_reg, nodo->val_entero);
+            break;
+        
+        case N_OPERACION: {
+            traducir_expresion(nodo->izq, out, target_reg);
+            traducir_expresion(nodo->der, out, target_reg + 1);
+            const char *op = obtener_nombre_operador(nodo->operador);
+            
+            if (strcmp(op, "+") == 0)
+                fprintf(out, "    add t%d, t%d, t%d\n", 
+                        target_reg, target_reg, target_reg + 1);
+            else if (strcmp(op, "*") == 0) {
+                // Multiplicación: usar __soft_mul
+                fprintf(out, "    mv a0, t%d\n", target_reg);
+                fprintf(out, "    mv a1, t%d\n", target_reg + 1);
+                fprintf(out, "    call __soft_mul\n");
+                fprintf(out, "    mv t%d, a0\n", target_reg);
+            }
+            // ... otros operadores ...
+            break;
+        }
+        
+        case N_ACCESO_ARREGLO: {
+            // val_entero = dirección base del arreglo
+            traducir_expresion(nodo->izq, out, target_reg);  // índice
+            fprintf(out, "    slli t%d, t%d, 2\n", target_reg, target_reg);
+            fprintf(out, "    li t%d, %d\n", target_reg + 1, nodo->val_entero);
+            fprintf(out, "    add t%d, t%d, t%d\n", 
+                    target_reg, target_reg, target_reg + 1);
+            fprintf(out, "    add t%d, t%d, sp\n", target_reg, target_reg);
+            fprintf(out, "    lw t%d, 0(t%d)\n", target_reg, target_reg);
+            break;
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Estructuras de Control}
+
+\begin{lstlisting}[style=cstyle, caption={Generación del bucle mientras}]
+case N_MIENTRAS: {
+    int etiq = obtener_etiqueta();
+    fprintf(out, ".L%d:\n", etiq);
+    
+    // Evaluar condición
+    traducir_expresion(nodo->izq, out, 0);
+    fprintf(out, "    beqz t0, .L%d\n", etiq + 1);
+    
+    // Cuerpo
+    generar_nodo(nodo->der, out);
+    
+    fprintf(out, "    j .L%d\n", etiq);
+    fprintf(out, ".L%d:\n", etiq + 1);
+    break;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=cstyle, caption={Generación del bucle para}]
+case N_PARA: {
+    int etiq = obtener_etiqueta();
+    
+    generar_nodo(nodo->izq, out);   // Inicialización
+    fprintf(out, ".L%d:\n", etiq);
+    
+    traducir_expresion(nodo->der, out, 0);  // Condición
+    fprintf(out, "    beqz t0, .L%d\n", etiq + 1);
+    
+    generar_nodo(nodo->adicional, out);     // Cuerpo
+    generar_nodo(nodo->centro, out);        // Paso (i = i + 1)
+    
+    fprintf(out, "    j .L%d\n", etiq);
+    fprintf(out, ".L%d:\n", etiq + 1);
+    break;
+}
+\end{lstlisting}
+
+\subsection{Funciones: Prólogo, Llamada y Epílogo}
+
+El manejo de funciones sigue la convención de llamada RISC-V:
+
+\begin{lstlisting}[style=cstyle, caption={Generación de declaración de función}]
+case N_DECLARACION_FUN: {
+    fprintf(out, "    .globl %s\n%s:\n", nodo->nombre_var, nodo->nombre_var);
+    
+    // PRÓLOGO: guardar ra en su slot reservado (calculado por semantic.c)
+    int ra_offset = nodo->val_entero; // Offset del .ra_nombre
+    fprintf(out, "    sw ra, %d(sp)\n", ra_offset);
+    
+    // Guardar parámetros (a0, a1, ...) en sus slots
+    guardar_parametros(nodo->izq, out);
+    
+    // Cuerpo de la función
+    generar_nodo(nodo->der, out);
+    
+    // Etiqueta de fin para los retornar
+    fprintf(out, ".L_end_%s:\n", nodo->nombre_var);
+    
+    // EPÍLOGO: restaurar ra y retornar
+    fprintf(out, "    lw ra, %d(sp)\n", ra_offset);
+    fprintf(out, "    ret\n\n");
+    break;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=cstyle, caption={Generación de llamada a función}]
+case N_LLAMADA_FUNCION: {
+    // Evaluar argumentos y cargarlos en a0, a1, ...
+    evaluar_argumentos(nodo->izq, out);
+    
+    fprintf(out, "    call %s\n", nodo->nombre_var);
+    
+    // El resultado queda en a0 (convención RISC-V)
+    fprintf(out, "    mv t0, a0\n");
+    break;
+}
+\end{lstlisting}
+
+\subsection{Instrucción imprimir}
+
+La instrucción \texttt{imprimir} detecta automáticamente el tipo de su argumento:
+
+\begin{lstlisting}[style=cstyle, caption={Generación de imprimir}]
+case N_IMPRIMIR: {
+    NodoAST *arg = nodo->izq;
+    
+    if (arg->tipo == N_CADENA) {
+        // Cadena: emitir en .data y llamar __print_str
+        fprintf(out, "    .section .data\n");
+        fprintf(out, ".LSTR%d: .string %s\n", ++str_counter, arg->val_cadena);
+        fprintf(out, "    .section .text\n");
+        fprintf(out, "    lui a0, %%hi(.LSTR%d)\n", str_counter);
+        fprintf(out, "    addi a0, a0, %%lo(.LSTR%d)\n", str_counter);
+        fprintf(out, "    call __print_str\n");
+    } else {
+        // Entero/variable: evaluar y llamar __print_num
+        traducir_expresion(arg, out, 0);
+        fprintf(out, "    mv a0, t0\n");
+        fprintf(out, "    call __print_num\n");
+    }
+    // Salto de línea automático
+    fprintf(out, "    li t0, 10\n");
+    fprintf(out, "    add zero, zero, t0  # FIX TTY Logisim\n");
+    fprintf(out, "    li t1, 0xff000004\n");
+    fprintf(out, "    sw t0, 0(t1)\n");
+    break;
+}
+\end{lstlisting}
+
+\section{Tabla de Posibilidades del Código Generado}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{4cm}p{7cm}}
+\toprule
+\textbf{Construcción TPP} & \textbf{Código RV32I generado} & \textbf{Notas} \\
+\midrule
+\texttt{entero x = 5;} &
+\texttt{li t0, 5} \newline \texttt{sw t0, N(sp)} &
+N = offset calculado por symtab \\
+\midrule
+\texttt{x = x + 1;} &
+\texttt{lw t0, N(sp)} \newline \texttt{li t1, 1} \newline \texttt{add t0, t0, t1} \newline \texttt{sw t0, N(sp)} &
+Usa registros temporales t0, t1 \\
+\midrule
+\texttt{x = a * b;} &
+\texttt{lw t0, N1(sp)} \newline \texttt{lw t1, N2(sp)} \newline \texttt{mv a0, t0} \newline \texttt{mv a1, t1} \newline \texttt{call \_\_soft\_mul} \newline \texttt{mv t0, a0} &
+Multiplicación por software \\
+\midrule
+\texttt{arr[i] = v;} &
+\texttt{lw t1, i\_off(sp)} \newline \texttt{slli t1, t1, 2} \newline \texttt{li t2, arr\_base} \newline \texttt{add t1, t1, t2} \newline \texttt{add t1, t1, sp} \newline \texttt{sw t0, 0(t1)} &
+Cálculo de dirección dinámico \\
+\midrule
+\texttt{si(cond)\{...\}} &
+\texttt{[evaluar cond]} \newline \texttt{beqz t0, .Lend} \newline \texttt{[cuerpo]} \newline \texttt{.Lend:} &
+Salto sobre el bloque \\
+\midrule
+\texttt{mientras(c)\{...\}} &
+\texttt{.L1:} \newline \texttt{[evaluar c]} \newline \texttt{beqz t0, .L2} \newline \texttt{[cuerpo]} \newline \texttt{j .L1} \newline \texttt{.L2:} &
+Bucle con etiquetas únicas \\
+\midrule
+\texttt{imprimir("str")} &
+\texttt{.section .data} \newline \texttt{.LSTRN: .string "str"} \newline \texttt{.section .text} \newline \texttt{lui/addi a0} \newline \texttt{call \_\_print\_str} &
+Cadena en sección .data \\
+\midrule
+\texttt{imprimir(x)} &
+\texttt{lw t0, N(sp)} \newline \texttt{mv a0, t0} \newline \texttt{call \_\_print\_num} &
+Conversión int→ASCII \\
+\midrule
+\texttt{fun f(entero p)\{\}} &
+\texttt{f:} \newline \texttt{sw ra, R(sp)} \newline \texttt{sw a0, P(sp)} \newline \texttt{[cuerpo]} \newline \texttt{.L\_end\_f:} \newline \texttt{lw ra, R(sp)} \newline \texttt{ret} &
+Prólogo/epílogo completo \\
+\midrule
+\texttt{retornar expr;} &
+\texttt{[evaluar expr]} \newline \texttt{mv a0, t0} \newline \texttt{j .L\_end\_nombre} &
+Resultado en a0, salto al epílogo \\
+\midrule
+\texttt{b = f(a);} &
+\texttt{lw t0, a\_off(sp)} \newline \texttt{mv a0, t0} \newline \texttt{call f} \newline \texttt{mv t0, a0} \newline \texttt{sw t0, b\_off(sp)} &
+Convención RISC-V estándar \\
+\bottomrule
+\end{tabular}
+\caption{Mapeo de construcciones TPP a instrucciones RV32I}
+\label{tab:codegen}
+\end{table}
+
+\section{Salida de Diagnóstico}
+
+El compilador imprime el contenido completo del \texttt{output.s} generado directamente en consola para facilitar la depuración:
+
+\begin{verbatim}
+==================== CODIGO FINAL (RV32I) ======================
+    .section .text
+
+# ---- RUTINA: print_str ----
+__print_str:
+    li t1, 0xff000004
+    ...
+
+    .globl main
+main:
+    addi sp, sp, -32
+    sw ra, 28(sp)
+    li t0, 10
+    sw t0, 0(sp)
+    call __user_main
+.halt_loop:
+    j .halt_loop
+================================================================
+\end{verbatim}

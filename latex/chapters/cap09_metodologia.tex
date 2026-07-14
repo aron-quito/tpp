@@ -1,0 +1,134 @@
+% ─── Capítulo: Metodología — Integración con Logisim ──────────────────────────
+\chapter{METODOLOGÍA — Integración con Logisim Evolution}
+
+\section{Visión General del Proceso}
+
+El compilador TPP no se detiene en la generación del archivo \texttt{output.s} (ensamblador RV32I en formato texto). Para que el programa pueda \textbf{ejecutarse realmente en el procesador} implementado en Logisim Evolution, es necesario un paso adicional: convertir el código ensamblador a \textbf{código máquina hexadecimal} cargable directamente en la memoria RAM del circuito.
+
+Este proceso es realizado por el script \texttt{compile\_to\_logisim.py}, derivado y adaptado del repositorio público \textbf{riscv-asm} (disponible en GitHub), un ensamblador minimalista de RISC-V en Python diseñado específicamente para la carga de programas en simuladores de hardware educativos.
+
+El flujo completo, desde el código fuente hasta la ejecución en el procesador, es el siguiente:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=0.6cm, auto,
+    step/.style={rectangle, draw=tppblue, fill=tppblue!8,
+                 text width=5.5cm, text centered, rounded corners,
+                 minimum height=0.9cm, font=\small\bfseries},
+    tool/.style={font=\footnotesize\itshape, text=gray},
+    arrow/.style={thick,->,>=stealth,color=tppblue}]
+
+    \node [step] (src)   {Código Fuente (.to)};
+    \node [step] (comp)  [below=of src]  {Compilador TPP (C)};
+    \node [step] (asm)   [below=of comp] {output.s (RV32I ASM texto)};
+    \node [step] (py)    [below=of asm]  {compile\_to\_logisim.py};
+    \node [step] (hex)   [below=of py]   {output.hex (Hexadecimal)};
+    \node [step] (log)   [below=of hex]  {Procesador Logisim (RAM)};
+
+    \node [tool, right=1.5cm of comp] {\texttt{./tpp archivo.to}};
+    \node [tool, right=1.5cm of py]   {\texttt{python3 compile\_to\_logisim.py}};
+    \node [tool, right=1.5cm of log]  {Carga manual en RAM};
+
+    \draw [arrow] (src) -- (comp);
+    \draw [arrow] (comp) -- (asm);
+    \draw [arrow] (asm) -- (py);
+    \draw [arrow] (py) -- (hex);
+    \draw [arrow] (hex) -- (log);
+\end{tikzpicture}
+\caption{Pipeline completo hasta ejecución en Logisim}
+\label{fig:pipeline-logisim}
+\end{figure}
+
+\section{El Script \texttt{compile\_to\_logisim.py}}
+
+\subsection{Origen y Adaptación}
+
+El script fue extraído y adaptado del repositorio \textbf{\texttt{riscv-asm}} disponible en GitHub. Este repositorio implementa un ensamblador RISC-V minimalista en Python, capaz de traducir código ensamblador RV32I a su representación binaria y hexadecimal, orientado a contextos educativos donde no se desea depender de toolchains complejos como \texttt{riscv64-unknown-elf-gcc}.
+
+La adaptación realizada para TPP incluye:
+\begin{itemize}
+    \item Soporte para el formato de memoria de Logisim Evolution (\texttt{v2.0 raw}).
+    \item Manejo de etiquetas relativas (pseudo-instrucción \texttt{j}, \texttt{call}).
+    \item Soporte de la sección \texttt{.data} para cadenas de texto literales.
+    \item Traducción de la pseudo-instrucción \texttt{li} a su secuencia \texttt{lui + addi}.
+\end{itemize}
+
+\subsection{Funcionamiento Interno}
+
+El script realiza los siguientes pasos en orden:
+
+\begin{enumerate}
+    \item \textbf{Primera pasada — Recolección de etiquetas:}
+    Lee el archivo \texttt{output.s} completo. Para cada línea que termina en \texttt{:} (ej. \texttt{main:}, \texttt{.L0:}), calcula la dirección de memoria correspondiente (contando words de 32 bits desde la dirección base \texttt{0x0000}) y registra la etiqueta en un diccionario de símbolos.
+
+    \item \textbf{Segunda pasada — Ensamblado:}
+    Para cada instrucción reconocida, aplica la codificación de la ISA RV32I (formato R, I, S, B, U, J) para producir el \textbf{word de 32 bits} en hexadecimal.
+    \begin{itemize}
+        \item Instrucciones de tipo R (\texttt{add}, \texttt{sub}, \texttt{and}): campos \texttt{funct7|rs2|rs1|funct3|rd|opcode}.
+        \item Instrucciones de tipo I (\texttt{lw}, \texttt{addi}): campo inmediato de 12 bits en complemento a dos.
+        \item Instrucciones de tipo S (\texttt{sw}): el inmediato se divide entre \texttt{inst[11:5]} e \texttt{inst[4:0]}.
+        \item Instrucciones de tipo B (\texttt{beqz}, \texttt{bne}): el inmediato codifica un offset en palabras con codificación especial.
+        \item Pseudo-instrucciones (\texttt{li}, \texttt{mv}, \texttt{j}, \texttt{call}, \texttt{ret}): se expanden a una o más instrucciones reales.
+    \end{itemize}
+
+    \item \textbf{Generación del archivo \texttt{output.hex}:}
+    El archivo resultante inicia con la cabecera \texttt{v2.0 raw} (requerida por Logisim), seguido de un word hexadecimal por línea:
+
+\begin{verbatim}
+v2.0 raw
+00000097
+00000113
+ff410113
+...
+\end{verbatim}
+
+    \item \textbf{Carga en Logisim:}
+    El archivo \texttt{output.hex} se carga en la componente \texttt{RAM} del circuito de Logisim mediante \textit{Right Click $\rightarrow$ Load Image...}. El procesador entonces lee las instrucciones desde la dirección \texttt{0x0000} al iniciar.
+\end{enumerate}
+
+\subsection{Codificación de Ejemplo}
+
+Para ilustrar el proceso, la instrucción \texttt{addi sp, sp, -32} se codifica de la siguiente manera en formato I:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccccc|c}
+\toprule
+\textbf{imm[11:0]} & \textbf{rs1} & \textbf{funct3} & \textbf{rd} & \textbf{opcode} & \textbf{Hex} \\
+\midrule
+\texttt{111111100000} & \texttt{00010} & \texttt{000} & \texttt{00010} & \texttt{0010011} & \texttt{fe010113} \\
+(= -32 en 12 bits) & (sp=x2) & (ADDI) & (sp=x2) & (OP-IMM) & \\
+\bottomrule
+\end{tabular}
+\caption{Codificación de \texttt{addi sp, sp, -32} en RV32I formato I}
+\label{tab:codificacion-I}
+\end{table}
+
+\section{Arquitectura RISC-V y el Procesador Logisim}
+
+\subsection{El Procesador de Ciclo Único}
+
+El procesador implementado en Logisim Evolution es un \textbf{procesador de ciclo único} (Single-Cycle Processor) para la ISA RISC-V RV32I. Sus componentes principales son:
+
+\begin{itemize}
+    \item \textbf{Program Counter (PC):} Registro de 32 bits que apunta a la instrucción actual en RAM.
+    \item \textbf{Memoria de Instrucciones (RAM):} Donde se carga el archivo \texttt{output.hex}.
+    \item \textbf{Banco de Registros:} 32 registros de 32 bits (x0--x31). x0 siempre es cero.
+    \item \textbf{ALU:} Unidad Aritmético Lógica que ejecuta operaciones según el campo \texttt{funct3/funct7}.
+    \item \textbf{Unidad de Control:} Decodifica el opcode y genera las señales de control para el datapath.
+    \item \textbf{Memoria de Datos (RAM):} Accedida con instrucciones \texttt{lw}/\texttt{sw}.
+    \item \textbf{TTY Output:} Dirección mapeada a memoria (\texttt{0xFF000004}) que actúa como terminal de salida de caracteres ASCII.
+\end{itemize}
+
+\subsection{Ciclo de Ejecución por Instrucción}
+
+Cada instrucción se ejecuta en un único ciclo de reloj mediante los siguientes pasos del datapath:
+
+\begin{enumerate}
+    \item \textbf{Fetch (IF):} Leer la instrucción de 32 bits desde RAM[\texttt{PC}].
+    \item \textbf{Decode (ID):} La unidad de control decodifica el opcode. Se leen los registros fuente.
+    \item \textbf{Execute (EX):} La ALU realiza la operación aritmética o calcula la dirección de memoria.
+    \item \textbf{Memory (MEM):} Si es \texttt{lw}/\texttt{sw}, se accede a la RAM de datos.
+    \item \textbf{Write Back (WB):} El resultado se escribe en el registro destino.
+    \item \textbf{PC Update:} PC $\leftarrow$ PC + 4 (o PC + offset para saltos).
+\end{enumerate}

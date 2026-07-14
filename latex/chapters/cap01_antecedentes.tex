@@ -1,0 +1,214 @@
+% ─── Capítulo 1: Antecedentes ─────────────────────────────────────────────────
+\chapter{ANTECEDENTES DE LA INVESTIGACIÓN}
+
+\section{Antecedentes}
+
+El desarrollo de compiladores ha evolucionado desde procesos manuales de traducción hasta sistemas automatizados capaces de analizar, optimizar y generar código de manera eficiente. Dentro de este proceso, las fases de análisis léxico y sintáctico cumplen un papel esencial como punto de partida, pero un compilador completo requiere además análisis semántico, generación de código intermedio y optimización para garantizar que el programa no solo sea gramaticalmente correcto, sino también coherente y procesable.
+
+Herramientas como Lex/Flex y Yacc/Bison han sido ampliamente utilizadas en el ámbito académico y profesional para la construcción de analizadores. Flex facilita la definición de patrones mediante expresiones regulares, mientras que Bison permite especificar gramáticas y reglas de producción. Sobre esta base, las fases posteriores del compilador permiten validar reglas semánticas, construir representaciones intermedias y aplicar optimizaciones antes de producir el resultado final.
+
+\section{Definición del Lenguaje TPP}
+
+\subsection{Objetivos del Lenguaje}
+
+El lenguaje \textbf{TPP} (\textit{Tiny Programming Processor}) fue diseñado con los siguientes objetivos pedagógicos:
+
+\begin{itemize}
+    \item Permitir que los estudiantes de sistemas escriban programas imperativos en un lenguaje cuya sintaxis está en \textbf{español}, reduciendo la carga cognitiva del idioma extranjero al aprender teoría de compilación.
+    \item Ser lo suficientemente completo para ilustrar todas las fases del pipeline de compilación (léxico, sintáctico, semántico, código intermedio, optimización y generación de código).
+    \item Generar código ejecutable en hardware real (simulado en \textbf{Logisim Evolution}) a través de la ISA RISC-V RV32I.
+\end{itemize}
+
+\subsection{Características Sintácticas}
+
+La sintaxis de TPP sigue un estilo imperativo similar a C/Java pero con palabras reservadas en español. A continuación se presenta el resumen de sus construcciones:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llp{6cm}}
+\toprule
+\textbf{Categoría} & \textbf{Construcción} & \textbf{Ejemplo en TPP} \\
+\midrule
+Tipos de datos & Entero, Decimal & \texttt{entero x = 5;} \\
+Arreglos & Estáticos de tamaño fijo & \texttt{entero arr[10];} \\
+Control de flujo & si/sino & \texttt{si (x > 0) \{ ... \} sino \{ ... \}} \\
+Bucles & mientras, para & \texttt{mientras (i < 10) \{ i = i + 1; \}} \\
+Selección múltiple & depende/caso/otros & \texttt{depende (x) \{ caso 1: \{ ... \} \}} \\
+Funciones & Con parámetros y retorno & \texttt{fun suma(entero a, entero b) -> entero \{ ... \}} \\
+Entrada/Salida & imprimir, leer & \texttt{imprimir("Hola mundo");} \\
+Comentarios & Línea simple & \texttt{// Este es un comentario} \\
+Operadores arit. & +, -, *, /, \% & \texttt{x = a * 2 + b / 3;} \\
+Operadores relac. & ==, !=, <, >, <=, >= & \texttt{si (a != b) \{ ... \}} \\
+Retorno de función & retornar & \texttt{retornar a + b;} \\
+\bottomrule
+\end{tabular}
+\caption{Sintaxis del lenguaje TPP}
+\label{tab:sintaxis-tpp}
+\end{table}
+
+\subsection{Restricciones del Lenguaje}
+
+\begin{itemize}
+    \item Los identificadores solo pueden contener letras y dígitos (sin guión bajo \_). Se recomienda \textit{camelCase}.
+    \item No existe el tipo booleano explícito; las comparaciones devuelven \texttt{0} (falso) o \texttt{1} (verdadero).
+    \item Los arreglos deben declararse con tamaño constante conocido en tiempo de compilación.
+    \item No hay recursión completa (modelo de memoria estático sin frames dinámicos).
+\end{itemize}
+
+\section{Especificación Léxica}
+
+\subsection{Palabras Reservadas}
+
+Las palabras reservadas de TPP son las siguientes y no pueden usarse como identificadores:
+
+\begin{center}
+\texttt{fun \quad si \quad sino \quad mientras \quad para \quad retornar \quad imprimir \quad leer \quad entero \quad decimal \quad depende \quad caso \quad otros}
+\end{center}
+
+\subsection{Clases de Tokens}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{llll}
+\toprule
+\textbf{Clase} & \textbf{Expresión Regular} & \textbf{Token} & \textbf{Ejemplo} \\
+\midrule
+Entero & \texttt{[0-9]+} & \texttt{NUM\_ENTERO} & \texttt{42} \\
+Decimal & \texttt{[0-9]+\textbackslash.[0-9]+} & \texttt{NUM\_DECIMAL} & \texttt{3.14} \\
+Cadena & \texttt{"([\textasciicircum "\textbackslash\textbackslash]|\textbackslash\textbackslash.)*"} & \texttt{CADENA} & \texttt{"hola"} \\
+Identificador & \texttt{[a-zA-Z][a-zA-Z0-9]*} & \texttt{ID} & \texttt{miVar} \\
+Suma & \texttt{+} & \texttt{MAS} & \texttt{+} \\
+Resta & \texttt{-} & \texttt{MENOS} & \texttt{-} \\
+Multiplicación & \texttt{*} & \texttt{MULT} & \texttt{*} \\
+División & \texttt{/} & \texttt{DIV} & \texttt{/} \\
+Igual & \texttt{==} & \texttt{IGUAL} & \texttt{==} \\
+Diferente & \texttt{!=} & \texttt{DIFERENTE} & \texttt{!=} \\
+Flecha retorno & \texttt{->} & \texttt{FLECHA} & \texttt{->} \\
+\bottomrule
+\end{tabular}
+\caption{Especificación léxica del lenguaje TPP}
+\label{tab:especif-lexica}
+\end{table}
+
+\section{Expresiones Regulares y Autómatas Finitos}
+
+Las categorías léxicas de TPP se definen formalmente mediante \textbf{Expresiones Regulares (ER)}. Flex convierte internamente estas ER en un \textbf{Autómata Finito No Determinista (NFA)} utilizando la construcción de Thompson, y luego aplica la construcción de subconjuntos para obtener un \textbf{Autómata Finito Determinista (DFA)} equivalente optimizado.
+
+Por ejemplo, la ER para un número entero es:
+
+\[
+\texttt{DIGITO}^{+} \equiv [0\text{-}9][0\text{-}9]^{*}
+\]
+
+Y la ER para un identificador es:
+
+\[
+\texttt{LETRA} \cdot (\texttt{LETRA} \mid \texttt{DIGITO})^{*} \equiv [a\text{-}zA\text{-}Z][a\text{-}zA\text{-}Z0\text{-}9]^{*}
+\]
+
+El DFA generado puede procesar cadenas de entrada en tiempo $O(n)$ proporcional a la longitud de la entrada, sin retroceder nunca (propiedad de los DFA).
+
+\section{Diseño de la Gramática (BNF)}
+
+La gramática del lenguaje TPP es una \textbf{Gramática Libre de Contexto (CFG)} escrita en formato BNF. A continuación se presentan las reglas más representativas:
+
+\begin{lstlisting}[style=cstyle, caption={Extracto de la gramática en BNF — parser.y}, language={}]
+programa        ::= lista_elementos
+lista_elementos ::= elemento | lista_elementos elemento
+
+elemento        ::= declaracion_fun
+                  | declaracion_var
+                  | instruccion
+
+declaracion_fun ::= "fun" ID "(" parametros ")" "->" tipo "{" bloque "}"
+                  | "fun" ID "(" parametros ")" "{" bloque "}"
+
+declaracion_var ::= tipo lista_ids ";"
+                  | tipo ID "[" NUM_ENTERO "]" ";"
+
+instruccion     ::= estructura_si
+                  | estructura_mientras
+                  | estructura_para
+                  | estructura_depende
+                  | asignacion ";"
+                  | llamada_funcion ";"
+                  | "retornar" expresion ";"
+                  | "imprimir" "(" lista_impresion ")"  ";"
+                  | "leer" "(" ID ")" ";"
+
+expresion       ::= expresion "+" expresion
+                  | expresion "-" expresion
+                  | expresion "*" expresion
+                  | expresion "/" expresion
+                  | expresion "==" expresion
+                  | expresion "!=" expresion
+                  | expresion "<"  expresion
+                  | expresion ">"  expresion
+                  | NUM_ENTERO | NUM_DECIMAL | ID | CADENA
+                  | llamada_funcion
+\end{lstlisting}
+
+\subsection{Eliminación de Ambigüedad}
+
+La gramática de expresiones es inherentemente ambigua (no especifica precedencia). Bison resuelve esto con declaraciones de precedencia explícitas en el archivo \texttt{parser.y}:
+
+\begin{lstlisting}[style=cstyle, caption={Declaraciones de precedencia en parser.y}]
+%left  IGUAL DIFERENTE MENOR MAYOR MENOR_IGUAL MAYOR_IGUAL  // menor prec.
+%left  MAS MENOS
+%left  MULT DIV MOD                                          // mayor prec.
+
+// Resolver el "dangling else":
+%nonassoc LOWER_THAN_SINO
+%nonassoc SINO
+\end{lstlisting}
+
+Esto garantiza que \texttt{3 + 4 * 2} se evalúe como \texttt{3 + (4*2) = 11} y que un \texttt{sino} siempre se asocie con el \texttt{si} más cercano.
+
+\section{Rúbrica de Evaluación}
+
+El proyecto fue evaluado bajo la siguiente rúbrica:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{rp{7.5cm}cccc}
+\toprule
+\textbf{N°} & \textbf{Criterio} & \textbf{Excelente} & \textbf{Bueno} & \textbf{Regular} & \textbf{Puntaje} \\
+\midrule
+1  & Definición del lenguaje (objetivos, sintaxis, características) & 1.0 & 0.75 & 0.50 & 1.0 \\
+2  & Especificación léxica (tokens, reservadas, operadores)         & 1.5 & 1.0  & 0.5  & 1.5 \\
+3  & Expresiones regulares y autómatas finitos                      & 1.5 & 1.0  & 0.5  & 1.5 \\
+4  & Implementación del analizador léxico                           & 2.0 & 1.5  & 1.0  & 2.0 \\
+5  & Diseño de la gramática (BNF/EBNF) y eliminación de ambigüedad & 2.0 & 1.5  & 1.0  & 2.0 \\
+6  & Implementación del analizador sintáctico                       & 2.0 & 1.5  & 1.0  & 2.0 \\
+7  & Implementación del analizador semántico y tabla de símbolos    & 2.0 & 1.5  & 1.0  & 2.0 \\
+8  & Generación de código intermedio                                & 1.5 & 1.0  & 0.5  & 1.5 \\
+9  & Optimización de código                                         & 1.0 & 0.75 & 0.50 & 1.0 \\
+10 & Generación de código final (ensamblador RV32I)                 & 2.0 & 1.5  & 1.0  & 2.0 \\
+11 & Funcionamiento integral (pruebas y manejo de errores)          & 1.5 & 1.0  & 0.5  & 1.5 \\
+12 & Documentación técnica, presentación y defensa del proyecto     & 2.0 & 1.5  & 1.0  & 2.0 \\
+\midrule
+   & \textbf{TOTAL} & & & & \textbf{20.0} \\
+\bottomrule
+\end{tabular}
+\caption{Rúbrica de evaluación del compilador TPP}
+\label{tab:rubrica}
+\end{table}
+
+\section{Objetivos}
+
+\subsection{Objetivo General}
+
+Diseñar e implementar la versión final de un compilador para un minilenguaje estructurado en español, integrando análisis léxico, análisis sintáctico, análisis semántico, generación de código intermedio y optimización de código, con salida en ensamblador RISC-V RV32I ejecutable en Logisim Evolution.
+
+\subsection{Objetivos Específicos}
+
+\begin{itemize}
+    \item \textbf{Consolidar las fases iniciales:} Mantener e integrar el analizador léxico en Flex y el analizador sintáctico en Bison como base del compilador del minilenguaje.
+    \item \textbf{Implementar el análisis semántico:} Verificar reglas de coherencia del programa, como uso de identificadores, compatibilidad de tipos y validez de instrucciones.
+    \item \textbf{Generar código intermedio:} Transformar las instrucciones reconocidas en una representación intermedia (TAC) que facilite su posterior procesamiento.
+    \item \textbf{Optimizar el código generado:} Aplicar plegado de constantes, simplificación algebraica y eliminación de código muerto.
+    \item \textbf{Generar código RV32I:} Traducir el AST optimizado a instrucciones ensamblador RISC-V ejecutables en el procesador Logisim.
+    \item \textbf{Integrar con Logisim:} Utilizar \texttt{compile\_to\_logisim.py} para convertir el ensamblador a formato hexadecimal cargable directamente en la RAM del procesador.
+    \item \textbf{Validar el compilador final:} Probar el sistema con programas del minilenguaje que evidencien el funcionamiento integrado de todas las fases.
+\end{itemize}

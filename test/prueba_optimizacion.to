@@ -1,0 +1,29 @@
+// Test de optimizaciones del compilador TPP
+// Plegado de constantes, simplificación algebraica,
+// eliminación de código muerto y propagación de constantes
+
+entero x = 3 + 5;
+entero y = x + 0;
+entero z = x * 1;
+entero w = 0 * 100;
+
+si (0) {
+    imprimir("CODIGO MUERTO: esto nunca se imprime");
+}
+
+si (1) {
+    imprimir("SIEMPRE VIVO: esto siempre se imprime");
+}
+
+mientras (0) {
+    imprimir("BUCLE MUERTO: nunca se ejecuta");
+}
+
+entero r = 10 * 2 + 3;
+
+imprimir("x = ");
+imprimir(x);
+imprimir("y = ");
+imprimir(y);
+imprimir("r = ");
+imprimir(r);

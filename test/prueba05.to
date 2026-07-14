@@ -1,0 +1,10 @@
+fun duplicar ( entero n ) -> entero {
+    retornar n * 2;
+}
+
+fun main () {
+    entero valor = 7;
+    entero doble = duplicar ( valor ) ;
+    imprimir ( " Doble de 7: " ) ;
+    imprimir ( doble ) ;
+}

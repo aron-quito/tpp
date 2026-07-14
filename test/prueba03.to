@@ -1,0 +1,5 @@
+// Falta el p a r n t e s i s de cierre en el si
+entero x = 5;
+si ( x > 0 { // ERROR : falta ’) ’
+    imprimir ( " positivo " ) ;
+}
