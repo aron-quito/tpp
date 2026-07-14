@@ -1,0 +1,10 @@
+entero contador = 5;
+entero resultado = 1;
+
+mientras (contador > 0) {
+    resultado = resultado * contador;
+    contador = contador - 1;
+}
+
+imprimir(resultado);
+imprimir("Fin del calculo");

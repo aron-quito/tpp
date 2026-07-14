@@ -3,17 +3,22 @@
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h"
-    #include "semantic.h"
+#include "semantic.h"
+#include "symtab.h"
+#include "codegen.h"
+#include "opt.h"
+#include "ir.h"
 
     extern FILE *yyin;
     extern int yylineno;
     extern int columna;
     extern char *yytext;
-    
-    int errores_sintacticos = 0;
-
+    extern int yylex();
     void yyerror(const char *s);
-    int yylex();
+    
+    NodoAST *raiz = NULL;
+    int errores_sintacticos = 0;
+    int exito_compilacion = 0;
 %}
 
 /* DEFINICIÓN DE LA UNIÓN: Tipos de datos para el AST o valores semánticos */
@@ -66,7 +71,42 @@ programa:
             imprimir_ast(raiz, 0);
             printf("================================================================================\n\n");
             
-            analizar_semantica(raiz);
+            int errores_sem = analizar_semantica(raiz);
+            if (errores_sem == 1) { // 1 indica éxito en semantic.c
+                
+                // 1. Optimizacion de Codigo
+                printf("\n==================== OPTIMIZACION DE CODIGO ====================\n");
+                optimizar_ast(raiz);
+                imprimir_ast(raiz, 0);
+                printf("================================================================\n");
+
+                // 2. Codigo Intermedio (TAC)
+                printf("\n==================== CODIGO INTERMEDIO (TAC) ===================\n");
+                generar_codigo_intermedio(raiz);
+                printf("================================================================\n");
+
+                // 3. Codigo Final (RV32I)
+                FILE *out = fopen("output.s", "w");
+                if (out) {
+                    generar_codigo(raiz, out);
+                    fclose(out);
+                    
+                    printf("\n==================== CODIGO FINAL (RV32I) ======================\n");
+                    out = fopen("output.s", "r");
+                    if (out) {
+                        char linea[256];
+                        while (fgets(linea, sizeof(linea), out)) {
+                            printf("%s", linea);
+                        }
+                        fclose(out);
+                    }
+                    printf("================================================================\n");
+                    
+                    exito_compilacion = 1; // Marcar compilación como exitosa
+                } else {
+                    fprintf(stderr, "Error: No se pudo abrir output.s para escribir.\n");
+                }
+            }
             
             liberar_ast(raiz);
         } else {
@@ -275,5 +315,5 @@ int main(int argc, char **argv) {
     yyparse();
     fclose(archivo);
     
-    return 0;
+    return exito_compilacion ? 0 : 1;
 }

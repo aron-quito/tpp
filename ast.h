@@ -83,6 +83,8 @@ NodoAST *nuevo_nodo_programa(NodoAST *lista_elementos);
 /* Función para imprimir y visualizar el AST de forma jerárquica */
 void imprimir_ast(NodoAST *nodo, int esp);
 
+const char *obtener_nombre_operador(int op);
+
 /* Función para liberar la memoria ocupada por el AST recursivamente */
 void liberar_ast(NodoAST *nodo);
 

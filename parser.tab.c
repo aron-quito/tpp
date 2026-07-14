@@ -154,17 +154,22 @@
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h"
-    #include "semantic.h"
+#include "semantic.h"
+#include "symtab.h"
+#include "codegen.h"
+#include "opt.h"
+#include "ir.h"
 
     extern FILE *yyin;
     extern int yylineno;
     extern int columna;
     extern char *yytext;
-    
-    int errores_sintacticos = 0;
-
+    extern int yylex();
     void yyerror(const char *s);
-    int yylex();
+    
+    NodoAST *raiz = NULL;
+    int errores_sintacticos = 0;
+    int exito_compilacion = 0;
 
 
 /* Enabling traces.  */
@@ -187,7 +192,7 @@
 
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef union YYSTYPE
-#line 20 "parser.y"
+#line 25 "parser.y"
 {
     int num_entero;
     double num_decimal;
@@ -195,7 +200,7 @@ typedef union YYSTYPE
     struct NodoAST* nodo;
 }
 /* Line 193 of yacc.c.  */
-#line 199 "parser.tab.c"
+#line 204 "parser.tab.c"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -208,7 +213,7 @@ typedef union YYSTYPE
 
 
 /* Line 216 of yacc.c.  */
-#line 212 "parser.tab.c"
+#line 217 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -527,16 +532,16 @@ static const yytype_int8 yyrhs[] =
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_uint16 yyrline[] =
 {
-       0,    61,    61,    80,    81,    85,    86,    91,    95,   102,
-     103,   107,   108,   112,   116,   117,   121,   125,   126,   130,
-     131,   136,   137,   141,   142,   143,   144,   145,   146,   147,
-     148,   149,   150,   155,   156,   157,   158,   162,   163,   167,
-     174,   178,   179,   183,   184,   188,   189,   193,   194,   195,
-     200,   201,   205,   206,   211,   212,   213,   214,   215,   216,
-     217,   218,   219,   220,   221,   222,   223,   224,   225,   226,
-     230,   234,   235,   239,   240
+       0,    66,    66,   120,   121,   125,   126,   131,   135,   142,
+     143,   147,   148,   152,   156,   157,   161,   165,   166,   170,
+     171,   176,   177,   181,   182,   183,   184,   185,   186,   187,
+     188,   189,   190,   195,   196,   197,   198,   202,   203,   207,
+     214,   218,   219,   223,   224,   228,   229,   233,   234,   235,
+     240,   241,   245,   246,   251,   252,   253,   254,   255,   256,
+     257,   258,   259,   260,   261,   262,   263,   264,   265,   266,
+     270,   274,   275,   279,   280
 };
 #endif
 
@@ -1608,7 +1613,7 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 61 "parser.y"
+#line 66 "parser.y"
     { 
         if (errores_sintacticos == 0) {
             printf("\nAnálisis sintáctico exitoso. El código es válido.\n"); 
@@ -1617,7 +1622,42 @@ yyreduce:
             imprimir_ast(raiz, 0);
             printf("================================================================================\n\n");
             
-            analizar_semantica(raiz);
+            int errores_sem = analizar_semantica(raiz);
+            if (errores_sem == 1) { // 1 indica éxito en semantic.c
+                
+                // 1. Optimizacion de Codigo
+                printf("\n==================== OPTIMIZACION DE CODIGO ====================\n");
+                optimizar_ast(raiz);
+                imprimir_ast(raiz, 0);
+                printf("================================================================\n");
+
+                // 2. Codigo Intermedio (TAC)
+                printf("\n==================== CODIGO INTERMEDIO (TAC) ===================\n");
+                generar_codigo_intermedio(raiz);
+                printf("================================================================\n");
+
+                // 3. Codigo Final (RV32I)
+                FILE *out = fopen("output.s", "w");
+                if (out) {
+                    generar_codigo(raiz, out);
+                    fclose(out);
+                    
+                    printf("\n==================== CODIGO FINAL (RV32I) ======================\n");
+                    out = fopen("output.s", "r");
+                    if (out) {
+                        char linea[256];
+                        while (fgets(linea, sizeof(linea), out)) {
+                            printf("%s", linea);
+                        }
+                        fclose(out);
+                    }
+                    printf("================================================================\n");
+                    
+                    exito_compilacion = 1; // Marcar compilación como exitosa
+                } else {
+                    fprintf(stderr, "Error: No se pudo abrir output.s para escribir.\n");
+                }
+            }
             
             liberar_ast(raiz);
         } else {
@@ -1628,27 +1668,27 @@ yyreduce:
     break;
 
   case 3:
-#line 80 "parser.y"
+#line 120 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 4:
-#line 81 "parser.y"
+#line 121 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 5:
-#line 85 "parser.y"
+#line 125 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 6:
-#line 86 "parser.y"
+#line 126 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 7:
-#line 91 "parser.y"
+#line 131 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_declaracion_fun((yyvsp[(2) - (10)].cadena), (yyvsp[(7) - (10)].num_entero), (yyvsp[(4) - (10)].nodo), (yyvsp[(9) - (10)].nodo));
         free((yyvsp[(2) - (10)].cadena));
@@ -1656,7 +1696,7 @@ yyreduce:
     break;
 
   case 8:
-#line 95 "parser.y"
+#line 135 "parser.y"
     {
         (yyval.nodo) = nuevo_nodo_declaracion_fun((yyvsp[(2) - (8)].cadena), 0, (yyvsp[(4) - (8)].nodo), (yyvsp[(7) - (8)].nodo));
         free((yyvsp[(2) - (8)].cadena));
@@ -1664,157 +1704,157 @@ yyreduce:
     break;
 
   case 9:
-#line 102 "parser.y"
+#line 142 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 10:
-#line 103 "parser.y"
+#line 143 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 11:
-#line 107 "parser.y"
+#line 147 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_parametros((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 12:
-#line 108 "parser.y"
-    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
-    break;
-
-  case 13:
-#line 112 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_parametro((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].cadena)); free((yyvsp[(2) - (2)].cadena)); ;}
-    break;
-
-  case 14:
-#line 116 "parser.y"
-    { (yyval.num_entero) = TIPO_ENTERO; ;}
-    break;
-
-  case 15:
-#line 117 "parser.y"
-    { (yyval.num_entero) = TIPO_DECIMAL; ;}
-    break;
-
-  case 16:
-#line 121 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_declaracion_var((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].nodo)); ;}
-    break;
-
-  case 17:
-#line 125 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
-    break;
-
-  case 18:
-#line 126 "parser.y"
-    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
-    break;
-
-  case 19:
-#line 130 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_variable((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
-    break;
-
-  case 20:
-#line 131 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_asignacion((yyvsp[(1) - (3)].cadena), (yyvsp[(3) - (3)].nodo)); free((yyvsp[(1) - (3)].cadena)); ;}
-    break;
-
-  case 21:
-#line 136 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
-    break;
-
-  case 22:
-#line 137 "parser.y"
-    { (yyval.nodo) = NULL; ;}
-    break;
-
-  case 23:
-#line 141 "parser.y"
-    { (yyval.nodo) = (yyvsp[(1) - (2)].nodo); ;}
-    break;
-
-  case 24:
-#line 142 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_asignacion((yyvsp[(1) - (4)].cadena), (yyvsp[(3) - (4)].nodo)); free((yyvsp[(1) - (4)].cadena)); ;}
-    break;
-
-  case 25:
-#line 143 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_imprimir((yyvsp[(3) - (5)].nodo)); ;}
-    break;
-
-  case 26:
-#line 144 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_leer((yyvsp[(3) - (5)].cadena)); free((yyvsp[(3) - (5)].cadena)); ;}
-    break;
-
-  case 27:
-#line 145 "parser.y"
-    { (yyval.nodo) = nuevo_nodo_retornar((yyvsp[(2) - (3)].nodo)); ;}
-    break;
-
-  case 28:
-#line 146 "parser.y"
-    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
-    break;
-
-  case 29:
-#line 147 "parser.y"
-    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
-    break;
-
-  case 30:
 #line 148 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
+  case 13:
+#line 152 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_parametro((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].cadena)); free((yyvsp[(2) - (2)].cadena)); ;}
+    break;
+
+  case 14:
+#line 156 "parser.y"
+    { (yyval.num_entero) = TIPO_ENTERO; ;}
+    break;
+
+  case 15:
+#line 157 "parser.y"
+    { (yyval.num_entero) = TIPO_DECIMAL; ;}
+    break;
+
+  case 16:
+#line 161 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_declaracion_var((yyvsp[(1) - (2)].num_entero), (yyvsp[(2) - (2)].nodo)); ;}
+    break;
+
+  case 17:
+#line 165 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
+    break;
+
+  case 18:
+#line 166 "parser.y"
+    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
+    break;
+
+  case 19:
+#line 170 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_variable((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
+    break;
+
+  case 20:
+#line 171 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_asignacion((yyvsp[(1) - (3)].cadena), (yyvsp[(3) - (3)].nodo)); free((yyvsp[(1) - (3)].cadena)); ;}
+    break;
+
+  case 21:
+#line 176 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_lista_elementos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
+    break;
+
+  case 22:
+#line 177 "parser.y"
+    { (yyval.nodo) = NULL; ;}
+    break;
+
+  case 23:
+#line 181 "parser.y"
+    { (yyval.nodo) = (yyvsp[(1) - (2)].nodo); ;}
+    break;
+
+  case 24:
+#line 182 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_asignacion((yyvsp[(1) - (4)].cadena), (yyvsp[(3) - (4)].nodo)); free((yyvsp[(1) - (4)].cadena)); ;}
+    break;
+
+  case 25:
+#line 183 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_imprimir((yyvsp[(3) - (5)].nodo)); ;}
+    break;
+
+  case 26:
+#line 184 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_leer((yyvsp[(3) - (5)].cadena)); free((yyvsp[(3) - (5)].cadena)); ;}
+    break;
+
+  case 27:
+#line 185 "parser.y"
+    { (yyval.nodo) = nuevo_nodo_retornar((yyvsp[(2) - (3)].nodo)); ;}
+    break;
+
+  case 28:
+#line 186 "parser.y"
+    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
+    break;
+
+  case 29:
+#line 187 "parser.y"
+    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
+    break;
+
+  case 30:
+#line 188 "parser.y"
+    { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
+    break;
+
   case 31:
-#line 149 "parser.y"
+#line 189 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 32:
-#line 150 "parser.y"
+#line 190 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error sintáctico ignorado. Analizador recuperado en el ';'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 33:
-#line 155 "parser.y"
+#line 195 "parser.y"
     { (yyval.nodo) = nuevo_nodo_si((yyvsp[(3) - (7)].nodo), (yyvsp[(6) - (7)].nodo), NULL); ;}
     break;
 
   case 34:
-#line 156 "parser.y"
+#line 196 "parser.y"
     { (yyval.nodo) = nuevo_nodo_si((yyvsp[(3) - (11)].nodo), (yyvsp[(6) - (11)].nodo), (yyvsp[(10) - (11)].nodo)); ;}
     break;
 
   case 35:
-#line 157 "parser.y"
+#line 197 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 36:
-#line 158 "parser.y"
+#line 198 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en condición del SI. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 37:
-#line 162 "parser.y"
+#line 202 "parser.y"
     { (yyval.nodo) = nuevo_nodo_mientras((yyvsp[(3) - (7)].nodo), (yyvsp[(6) - (7)].nodo)); ;}
     break;
 
   case 38:
-#line 163 "parser.y"
+#line 203 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en condición del MIENTRAS. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 39:
-#line 167 "parser.y"
+#line 207 "parser.y"
     {
         NodoAST* init = nuevo_nodo_declaracion_var((yyvsp[(3) - (16)].num_entero), nuevo_nodo_asignacion((yyvsp[(4) - (16)].cadena), (yyvsp[(6) - (16)].nodo)));
         NodoAST* paso = nuevo_nodo_asignacion((yyvsp[(10) - (16)].cadena), (yyvsp[(12) - (16)].nodo));
@@ -1825,183 +1865,183 @@ yyreduce:
     break;
 
   case 40:
-#line 174 "parser.y"
+#line 214 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en encabezado del PARA. Recuperado en ')'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 41:
-#line 178 "parser.y"
+#line 218 "parser.y"
     { (yyval.nodo) = nuevo_nodo_depende((yyvsp[(2) - (5)].nodo), (yyvsp[(4) - (5)].nodo)); ;}
     break;
 
   case 42:
-#line 179 "parser.y"
+#line 219 "parser.y"
     { yyerrok; printf("=> [Panic Mode] Error en valor del DEPENDE. Recuperado en '{'.\n"); (yyval.nodo) = NULL; ;}
     break;
 
   case 43:
-#line 183 "parser.y"
+#line 223 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_casos((yyvsp[(1) - (2)].nodo), (yyvsp[(2) - (2)].nodo)); ;}
     break;
 
   case 44:
-#line 184 "parser.y"
+#line 224 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 45:
-#line 188 "parser.y"
+#line 228 "parser.y"
     { (yyval.nodo) = nuevo_nodo_caso((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 46:
-#line 189 "parser.y"
+#line 229 "parser.y"
     { (yyval.nodo) = nuevo_nodo_caso(NULL, (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 47:
-#line 193 "parser.y"
+#line 233 "parser.y"
     { (yyval.nodo) = nuevo_nodo_entero((yyvsp[(1) - (1)].num_entero)); ;}
     break;
 
   case 48:
-#line 194 "parser.y"
+#line 234 "parser.y"
     { (yyval.nodo) = nuevo_nodo_decimal((yyvsp[(1) - (1)].num_decimal)); ;}
     break;
 
   case 49:
-#line 195 "parser.y"
+#line 235 "parser.y"
     { (yyval.nodo) = nuevo_nodo_cadena((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 50:
-#line 200 "parser.y"
+#line 240 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 51:
-#line 201 "parser.y"
+#line 241 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 52:
-#line 205 "parser.y"
+#line 245 "parser.y"
     { (yyval.nodo) = nuevo_nodo_cadena((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 53:
-#line 206 "parser.y"
+#line 246 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 54:
-#line 211 "parser.y"
+#line 251 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAS, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 55:
-#line 212 "parser.y"
+#line 252 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOS, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 56:
-#line 213 "parser.y"
+#line 253 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MULT, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 57:
-#line 214 "parser.y"
+#line 254 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(DIV, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 58:
-#line 215 "parser.y"
+#line 255 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MOD, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 59:
-#line 216 "parser.y"
+#line 256 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAYOR, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 60:
-#line 217 "parser.y"
+#line 257 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOR, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 61:
-#line 218 "parser.y"
+#line 258 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MAYOR_IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 62:
-#line 219 "parser.y"
+#line 259 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(MENOR_IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 63:
-#line 220 "parser.y"
+#line 260 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(IGUAL, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 64:
-#line 221 "parser.y"
+#line 261 "parser.y"
     { (yyval.nodo) = nuevo_nodo_operacion(DIFERENTE, (yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
   case 65:
-#line 222 "parser.y"
+#line 262 "parser.y"
     { (yyval.nodo) = (yyvsp[(2) - (3)].nodo); ;}
     break;
 
   case 66:
-#line 223 "parser.y"
+#line 263 "parser.y"
     { (yyval.nodo) = nuevo_nodo_variable((yyvsp[(1) - (1)].cadena)); free((yyvsp[(1) - (1)].cadena)); ;}
     break;
 
   case 67:
-#line 224 "parser.y"
+#line 264 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 68:
-#line 225 "parser.y"
+#line 265 "parser.y"
     { (yyval.nodo) = nuevo_nodo_entero((yyvsp[(1) - (1)].num_entero)); ;}
     break;
 
   case 69:
-#line 226 "parser.y"
+#line 266 "parser.y"
     { (yyval.nodo) = nuevo_nodo_decimal((yyvsp[(1) - (1)].num_decimal)); ;}
     break;
 
   case 70:
-#line 230 "parser.y"
+#line 270 "parser.y"
     { (yyval.nodo) = nuevo_nodo_llamada_funcion((yyvsp[(1) - (4)].cadena), (yyvsp[(3) - (4)].nodo)); free((yyvsp[(1) - (4)].cadena)); ;}
     break;
 
   case 71:
-#line 234 "parser.y"
+#line 274 "parser.y"
     { (yyval.nodo) = (yyvsp[(1) - (1)].nodo); ;}
     break;
 
   case 72:
-#line 235 "parser.y"
+#line 275 "parser.y"
     { (yyval.nodo) = NULL; ;}
     break;
 
   case 73:
-#line 239 "parser.y"
+#line 279 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos(NULL, (yyvsp[(1) - (1)].nodo)); ;}
     break;
 
   case 74:
-#line 240 "parser.y"
+#line 280 "parser.y"
     { (yyval.nodo) = nuevo_nodo_lista_argumentos((yyvsp[(1) - (3)].nodo), (yyvsp[(3) - (3)].nodo)); ;}
     break;
 
 
 /* Line 1267 of yacc.c.  */
-#line 2005 "parser.tab.c"
+#line 2045 "parser.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2215,7 +2255,7 @@ yyreturn:
 }
 
 
-#line 243 "parser.y"
+#line 283 "parser.y"
 
 
 /* 7. REPORTE DE ERRORES DINÁMICO */
@@ -2251,5 +2291,5 @@ int main(int argc, char **argv) {
     yyparse();
     fclose(archivo);
     
-    return 0;
+    return exito_compilacion ? 0 : 1;
 }

@@ -5,8 +5,11 @@
 
 static Simbolo *tabla_simbolos = NULL;
 
+static unsigned int mem_disponible = 0;
+
 void inicializar_symtab() {
     tabla_simbolos = NULL;
+    mem_disponible = 0;
 }
 
 Simbolo* insertar_simbolo(char *nombre, CategoriaSimbolo cat, int tipo, int ambito) {
@@ -28,6 +31,13 @@ Simbolo* insertar_simbolo(char *nombre, CategoriaSimbolo cat, int tipo, int ambi
     nuevo->num_params = 0;
     nuevo->tipos_params = NULL;
     nuevo->ambito = ambito;
+    
+    if (cat == SYM_VAR) {
+        nuevo->direccion_memoria = mem_disponible;
+        mem_disponible += 4;
+    } else {
+        nuevo->direccion_memoria = 0;
+    }
     
     nuevo->sig = tabla_simbolos;
     tabla_simbolos = nuevo;
@@ -72,16 +82,16 @@ void eliminar_ambito(int ambito) {
 
 void imprimir_symtab() {
     printf("==================== TABLA DE SIMBOLOS ====================\n");
-    printf("%-20s %-10s %-10s %-10s\n", "Nombre", "Categoria", "Tipo", "Ambito");
-    printf("-----------------------------------------------------------\n");
+    printf("%-20s %-10s %-10s %-10s %-10s\n", "Nombre", "Categoria", "Tipo", "Ambito", "Memoria");
+    printf("--------------------------------------------------------------------------\n");
     Simbolo *actual = tabla_simbolos;
     while (actual != NULL) {
-        printf("%-20s %-10s %-10d %-10d\n", actual->nombre, 
+        printf("%-20s %-10s %-10d %-10d 0x%08X\n", actual->nombre, 
                (actual->categoria == SYM_VAR ? "Variable" : "Funcion"), 
-               actual->tipo, actual->ambito);
+               actual->tipo, actual->ambito, actual->direccion_memoria);
         actual = actual->sig;
     }
-    printf("===========================================================\n");
+    printf("==========================================================================\n");
 }
 
 void liberar_symtab() {
@@ -94,4 +104,8 @@ void liberar_symtab() {
         actual = siguiente;
     }
     tabla_simbolos = NULL;
+}
+
+unsigned int obtener_mem_disponible() {
+    return mem_disponible;
 }

@@ -221,7 +221,7 @@ NodoAST *nuevo_nodo_programa(NodoAST *lista_elementos) {
 }
 
 // Obtiene la representación de texto para operadores y tipos
-static const char *obtener_nombre_operador(int op) {
+const char *obtener_nombre_operador(int op) {
   switch (op) {
   case MAS:
     return "+";

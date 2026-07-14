@@ -13,6 +13,7 @@ typedef struct Simbolo {
     int num_params;         // Para funciones
     int *tipos_params;      // Tipos de los parámetros para funciones
     int ambito;             // 0=global, 1,2,3...=local
+    unsigned int direccion_memoria; // Dirección en RAM asignada
     struct Simbolo *sig;
 } Simbolo;
 
@@ -22,5 +23,6 @@ Simbolo* buscar_simbolo(char *nombre);
 void eliminar_ambito(int ambito);
 void imprimir_symtab();
 void liberar_symtab();
+unsigned int obtener_mem_disponible();
 
 #endif
