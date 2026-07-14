@@ -1,391 +1,256 @@
+// =========================================================
+// MÁQUINA ENIGMA COMPLETAMENTE OPTIMIZADA PARA COMPILADOR TPP
+// Arquitectura RISC - Sin Strings, Sin Arrays, Ámbito Local
+// =========================================================
 
-// --- BOMBE: DESCIFRADO DE ENIGMA REAL ---
-// Cifrado: DAIDYUGSKTBQRJUVYWLMFJIWPQRSLV
-// Objetivo: Termina en HEILXHITLER
-
-entero r1f[26];
-r1f[0] = 0;
-r1f[1] = 9;
-r1f[2] = 3;
-r1f[3] = 10;
-r1f[4] = 18;
-r1f[5] = 8;
-r1f[6] = 17;
-r1f[7] = 20;
-r1f[8] = 23;
-r1f[9] = 1;
-r1f[10] = 11;
-r1f[11] = 7;
-r1f[12] = 22;
-r1f[13] = 19;
-r1f[14] = 12;
-r1f[15] = 2;
-r1f[16] = 16;
-r1f[17] = 6;
-r1f[18] = 25;
-r1f[19] = 13;
-r1f[20] = 15;
-r1f[21] = 24;
-r1f[22] = 5;
-r1f[23] = 21;
-r1f[24] = 14;
-r1f[25] = 4;
-entero r2f[26];
-r2f[0] = 4;
-r2f[1] = 10;
-r2f[2] = 12;
-r2f[3] = 5;
-r2f[4] = 11;
-r2f[5] = 6;
-r2f[6] = 3;
-r2f[7] = 16;
-r2f[8] = 21;
-r2f[9] = 25;
-r2f[10] = 13;
-r2f[11] = 19;
-r2f[12] = 14;
-r2f[13] = 22;
-r2f[14] = 24;
-r2f[15] = 7;
-r2f[16] = 23;
-r2f[17] = 20;
-r2f[18] = 18;
-r2f[19] = 15;
-r2f[20] = 0;
-r2f[21] = 8;
-r2f[22] = 1;
-r2f[23] = 17;
-r2f[24] = 2;
-r2f[25] = 9;
-entero r3f[26];
-r3f[0] = 1;
-r3f[1] = 3;
-r3f[2] = 5;
-r3f[3] = 7;
-r3f[4] = 9;
-r3f[5] = 11;
-r3f[6] = 2;
-r3f[7] = 15;
-r3f[8] = 17;
-r3f[9] = 19;
-r3f[10] = 23;
-r3f[11] = 21;
-r3f[12] = 25;
-r3f[13] = 13;
-r3f[14] = 24;
-r3f[15] = 4;
-r3f[16] = 8;
-r3f[17] = 22;
-r3f[18] = 6;
-r3f[19] = 0;
-r3f[20] = 10;
-r3f[21] = 12;
-r3f[22] = 20;
-r3f[23] = 18;
-r3f[24] = 16;
-r3f[25] = 14;
-entero r1b[26];
-r1b[0] = 0;
-r1b[1] = 9;
-r1b[2] = 15;
-r1b[3] = 2;
-r1b[4] = 25;
-r1b[5] = 22;
-r1b[6] = 17;
-r1b[7] = 11;
-r1b[8] = 5;
-r1b[9] = 1;
-r1b[10] = 3;
-r1b[11] = 10;
-r1b[12] = 14;
-r1b[13] = 19;
-r1b[14] = 24;
-r1b[15] = 20;
-r1b[16] = 16;
-r1b[17] = 6;
-r1b[18] = 4;
-r1b[19] = 13;
-r1b[20] = 7;
-r1b[21] = 23;
-r1b[22] = 12;
-r1b[23] = 8;
-r1b[24] = 21;
-r1b[25] = 18;
-entero r2b[26];
-r2b[0] = 20;
-r2b[1] = 22;
-r2b[2] = 24;
-r2b[3] = 6;
-r2b[4] = 0;
-r2b[5] = 3;
-r2b[6] = 5;
-r2b[7] = 15;
-r2b[8] = 21;
-r2b[9] = 25;
-r2b[10] = 1;
-r2b[11] = 4;
-r2b[12] = 2;
-r2b[13] = 10;
-r2b[14] = 12;
-r2b[15] = 19;
-r2b[16] = 7;
-r2b[17] = 23;
-r2b[18] = 18;
-r2b[19] = 11;
-r2b[20] = 17;
-r2b[21] = 8;
-r2b[22] = 13;
-r2b[23] = 16;
-r2b[24] = 14;
-r2b[25] = 9;
-entero r3b[26];
-r3b[0] = 19;
-r3b[1] = 0;
-r3b[2] = 6;
-r3b[3] = 1;
-r3b[4] = 15;
-r3b[5] = 2;
-r3b[6] = 18;
-r3b[7] = 3;
-r3b[8] = 16;
-r3b[9] = 4;
-r3b[10] = 20;
-r3b[11] = 5;
-r3b[12] = 21;
-r3b[13] = 13;
-r3b[14] = 25;
-r3b[15] = 7;
-r3b[16] = 24;
-r3b[17] = 8;
-r3b[18] = 23;
-r3b[19] = 9;
-r3b[20] = 22;
-r3b[21] = 11;
-r3b[22] = 17;
-r3b[23] = 10;
-r3b[24] = 14;
-r3b[25] = 12;
-entero refb[26];
-refb[0] = 24;
-refb[1] = 17;
-refb[2] = 20;
-refb[3] = 7;
-refb[4] = 16;
-refb[5] = 18;
-refb[6] = 11;
-refb[7] = 3;
-refb[8] = 15;
-refb[9] = 23;
-refb[10] = 13;
-refb[11] = 6;
-refb[12] = 14;
-refb[13] = 10;
-refb[14] = 12;
-refb[15] = 8;
-refb[16] = 4;
-refb[17] = 1;
-refb[18] = 5;
-refb[19] = 25;
-refb[20] = 2;
-refb[21] = 22;
-refb[22] = 21;
-refb[23] = 9;
-refb[24] = 0;
-refb[25] = 19;
-entero stecker[26];
-stecker[0] = 0;
-stecker[1] = 16;
-stecker[2] = 17;
-stecker[3] = 8;
-stecker[4] = 9;
-stecker[5] = 5;
-stecker[6] = 7;
-stecker[7] = 6;
-stecker[8] = 3;
-stecker[9] = 4;
-stecker[10] = 22;
-stecker[11] = 11;
-stecker[12] = 19;
-stecker[13] = 13;
-stecker[14] = 18;
-stecker[15] = 23;
-stecker[16] = 1;
-stecker[17] = 2;
-stecker[18] = 14;
-stecker[19] = 12;
-stecker[20] = 25;
-stecker[21] = 21;
-stecker[22] = 10;
-stecker[23] = 15;
-stecker[24] = 24;
-stecker[25] = 20;
-entero mensaje[30];
-mensaje[0] = 3;
-mensaje[1] = 0;
-mensaje[2] = 8;
-mensaje[3] = 3;
-mensaje[4] = 24;
-mensaje[5] = 20;
-mensaje[6] = 6;
-mensaje[7] = 18;
-mensaje[8] = 10;
-mensaje[9] = 19;
-mensaje[10] = 1;
-mensaje[11] = 16;
-mensaje[12] = 17;
-mensaje[13] = 9;
-mensaje[14] = 20;
-mensaje[15] = 21;
-mensaje[16] = 24;
-mensaje[17] = 22;
-mensaje[18] = 11;
-mensaje[19] = 12;
-mensaje[20] = 5;
-mensaje[21] = 9;
-mensaje[22] = 8;
-mensaje[23] = 22;
-mensaje[24] = 15;
-mensaje[25] = 16;
-mensaje[26] = 17;
-mensaje[27] = 18;
-mensaje[28] = 11;
-mensaje[29] = 21;
-entero texto[30];
-entero exito;
-exito = 0;
-
-entero pos1;
-entero pos2;
-entero pos3;
-entero p1; entero p2; entero p3;
-
-entero i;
-entero c;
-
-entero m2; entero m3;
-entero pder; entero pmed;
-entero aux;
-
-// Muescas: R2(I) Q=16, R3(III) V=21
-m2 = 16;
-m3 = 21;
-
-pos1 = 0;
-mientras(pos1 < 26) {
-    pos2 = 0;
-    mientras(pos2 < 26) {
-        pos3 = 0;
-        mientras(pos3 < 26) {
-            
-            // Inicializar posiciones de rotores
-            p1 = pos1; p2 = pos2; p3 = pos3;
-            
-            // Descifrar el mensaje
-            i = 0;
-            mientras(i < 30) {
-                // Girar rotores (odometro)
-                pder = 0;
-                pmed = 0;
-                si (p2 == m2) { pmed = 1; }
-                si (p3 == m3) { pder = 1; }
-                
-                si (pmed == 1) {
-                    p2 = p2 + 1;
-                    si (p2 == 26) { p2 = 0; }
-                    p1 = p1 + 1;
-                    si (p1 == 26) { p1 = 0; }
-                } sino {
-                    si (pder == 1) {
-                        p2 = p2 + 1;
-                        si (p2 == 26) { p2 = 0; }
-                        // REPLICANDO EL BUG DE PYTHON PARA QUE FUNCIONE:
-                        p1 = p1 + 1;
-                        si (p1 == 26) { p1 = 0; }
-                    }
-                }
-                
-                p3 = p3 + 1;
-                si (p3 == 26) { p3 = 0; }
-                
-                // Pasar la letra
-                c = mensaje[i];
-                
-                // Steckerbrett Entrada
-                c = stecker[c];
-                
-                // Rotor 3 fwd
-                c = c + p3; si (c >= 26) { c = c - 26; }
-                c = r3f[c];
-                c = c - p3; si (c < 0) { c = c + 26; }
-                
-                // Rotor 2 fwd
-                c = c + p2; si (c >= 26) { c = c - 26; }
-                c = r2f[c];
-                c = c - p2; si (c < 0) { c = c + 26; }
-                
-                // Rotor 1 fwd
-                c = c + p1; si (c >= 26) { c = c - 26; }
-                c = r1f[c];
-                c = c - p1; si (c < 0) { c = c + 26; }
-                
-                // Reflector
-                c = refb[c];
-                
-                // Rotor 1 bwd
-                c = c + p1; si (c >= 26) { c = c - 26; }
-                c = r1b[c];
-                c = c - p1; si (c < 0) { c = c + 26; }
-                
-                // Rotor 2 bwd
-                c = c + p2; si (c >= 26) { c = c - 26; }
-                c = r2b[c];
-                c = c - p2; si (c < 0) { c = c + 26; }
-                
-                // Rotor 3 bwd
-                c = c + p3; si (c >= 26) { c = c - 26; }
-                c = r3b[c];
-                c = c - p3; si (c < 0) { c = c + 26; }
-                
-                // Steckerbrett Salida
-                c = stecker[c];
-                
-                texto[i] = c;
-                i = i + 1;
-            }
-            
-            // Verificar si las ultimas 11 letras son HEILXHITLER (indices: 7,4,8,11,23,7,8,19,11,4,17)
-            // pos 19 a 29
-            aux = 1;
-            si (texto[19] != 7) { aux = 0; }
-            si (texto[20] != 4) { aux = 0; }
-            si (texto[21] != 8) { aux = 0; }
-            si (texto[22] != 11) { aux = 0; }
-            si (texto[23] != 23) { aux = 0; }
-            si (texto[24] != 7) { aux = 0; }
-            si (texto[25] != 8) { aux = 0; }
-            si (texto[26] != 19) { aux = 0; }
-            si (texto[27] != 11) { aux = 0; }
-            si (texto[28] != 4) { aux = 0; }
-            si (texto[29] != 17) { aux = 0; }
-            
-            si (aux == 1) {
-                imprimir("¡LA MAQUINA BOMBE HA ROTO LA CLAVE DE ENIGMA!");
-                imprimir("Rotacion Inicial Encontrada: ");
-                imprimir(pos1);
-                imprimir(pos2);
-                imprimir(pos3);
-                exito = 1;
-                // Forzar salida
-                pos1 = 26; pos2 = 26; pos3 = 26;
-            }
-            
-            pos3 = pos3 + 1;
-        }
-        pos2 = pos2 + 1;
+// --- MATEMÁTICA AUXILIAR ---
+fun modulo(entero n) -> entero {
+    mientras (n < 0) {
+        n = n + 26;
     }
-    pos1 = pos1 + 1;
+    retornar n % 26;
 }
 
-si (exito == 0) {
-    imprimir("FALLO CRITICO: No se encontro el mensaje.");
+// --- PANEL DE CLAVIJAS (BQ CR DI EJ KW MT OS PX UZ GH) ---
+fun clavijas(entero l) -> entero {
+    depende l {
+        1: retornar 16;  16: retornar 1;
+        2: retornar 17;  17: retornar 2;
+        3: retornar 8;   8: retornar 3;
+        4: retornar 9;   9: retornar 4;
+        10: retornar 22; 22: retornar 10;
+        12: retornar 19; 19: retornar 12;
+        14: retornar 18; 18: retornar 14;
+        15: retornar 23; 23: retornar 15;
+        20: retornar 25; 25: retornar 20;
+        6: retornar 7;   7: retornar 6;
+        otros: retornar l;
+    }
+}
+
+// --- REFLECTOR B ---
+fun reflectorB(entero l) -> entero {
+    depende l {
+        0: retornar 24; 1: retornar 17; 2: retornar 20; 3: retornar 7;
+        4: retornar 16; 5: retornar 18; 6: retornar 11; 7: retornar 3;
+        8: retornar 15; 9: retornar 23; 10: retornar 13; 11: retornar 6;
+        12: retornar 14; 13: retornar 10; 14: retornar 12; 15: retornar 8;
+        16: retornar 4; 17: retornar 1; 18: retornar 5; 19: retornar 25;
+        20: retornar 2; 21: retornar 22; 22: retornar 21; 23: retornar 9;
+        24: retornar 0; 25: retornar 19;
+        otros: retornar l;
+    }
+}
+
+// --- ROTOR I ---
+fun rotorUnoFwd(entero l) -> entero {
+    depende l {
+        0: retornar 4; 1: retornar 10; 2: retornar 12; 3: retornar 5;
+        4: retornar 11; 5: retornar 6; 6: retornar 3; 7: retornar 16;
+        8: retornar 21; 9: retornar 25; 10: retornar 13; 11: retornar 19;
+        12: retornar 14; 13: retornar 22; 14: retornar 24; 15: retornar 7;
+        16: retornar 23; 17: retornar 20; 18: retornar 18; 19: retornar 15;
+        20: retornar 0; 21: retornar 8; 22: retornar 1; 23: retornar 17;
+        24: retornar 2; 25: retornar 9; otros: retornar l;
+    }
+}
+fun rotorUnoRev(entero l) -> entero {
+    depende l {
+        4: retornar 0; 10: retornar 1; 12: retornar 2; 5: retornar 3;
+        11: retornar 4; 6: retornar 5; 3: retornar 6; 16: retornar 7;
+        21: retornar 8; 25: retornar 9; 13: retornar 10; 19: retornar 11;
+        14: retornar 12; 22: retornar 13; 24: retornar 14; 7: retornar 15;
+        23: retornar 16; 20: retornar 17; 18: retornar 18; 15: retornar 19;
+        0: retornar 20; 8: retornar 21; 1: retornar 22; 17: retornar 23;
+        2: retornar 24; 9: retornar 25; otros: retornar l;
+    }
+}
+
+// --- ROTOR II ---
+fun rotorDosFwd(entero l) -> entero {
+    depende l {
+        0: retornar 0; 1: retornar 9; 2: retornar 3; 3: retornar 10;
+        4: retornar 18; 5: retornar 8; 6: retornar 17; 7: retornar 20;
+        8: retornar 23; 9: retornar 1; 10: retornar 11; 11: retornar 7;
+        12: retornar 22; 13: retornar 19; 14: retornar 12; 15: retornar 2;
+        16: retornar 16; 17: retornar 6; 18: retornar 25; 19: retornar 13;
+        20: retornar 15; 21: retornar 24; 22: retornar 5; 23: retornar 21;
+        24: retornar 14; 25: retornar 4; otros: retornar l;
+    }
+}
+fun rotorDosRev(entero l) -> entero {
+    depende l {
+        0: retornar 0; 9: retornar 1; 3: retornar 2; 10: retornar 3;
+        18: retornar 4; 8: retornar 5; 17: retornar 6; 20: retornar 7;
+        23: retornar 8; 1: retornar 9; 11: retornar 10; 7: retornar 11;
+        22: retornar 12; 19: retornar 13; 12: retornar 14; 2: retornar 15;
+        16: retornar 16; 6: retornar 17; 25: retornar 18; 13: retornar 19;
+        15: retornar 20; 24: retornar 21; 5: retornar 22; 21: retornar 23;
+        14: retornar 24; 4: retornar 25; otros: retornar l;
+    }
+}
+
+// --- ROTOR III ---
+fun rotorTresFwd(entero l) -> entero {
+    depende l {
+        0: retornar 1; 1: retornar 3; 2: retornar 5; 3: retornar 7;
+        4: retornar 9; 5: retornar 11; 6: retornar 2; 7: retornar 15;
+        8: retornar 17; 9: retornar 19; 10: retornar 23; 11: retornar 21;
+        12: retornar 25; 13: retornar 13; 14: retornar 24; 15: retornar 4;
+        16: retornar 8; 17: retornar 22; 18: retornar 6; 19: retornar 0;
+        20: retornar 10; 21: retornar 12; 22: retornar 20; 23: retornar 18;
+        24: retornar 16; 25: retornar 14; otros: retornar l;
+    }
+}
+fun rotorTresRev(entero l) -> entero {
+    depende l {
+        1: retornar 0; 3: retornar 1; 5: retornar 2; 7: retornar 3;
+        9: retornar 4; 11: retornar 5; 2: retornar 6; 15: retornar 7;
+        17: retornar 8; 19: retornar 9; 23: retornar 10; 21: retornar 11;
+        25: retornar 12; 13: retornar 13; 24: retornar 14; 4: retornar 15;
+        8: retornar 16; 22: retornar 17; 6: retornar 18; 0: retornar 19;
+        10: retornar 20; 12: retornar 21; 20: retornar 22; 18: retornar 23;
+        16: retornar 24; 14: retornar 25; otros: retornar l;
+    }
+}
+
+// --- LÓGICA DE PASO POR ROTOR ---
+fun pasarRotor(entero letra, entero pos, entero anillo, entero numRotor, entero reverso) -> entero {
+    entero desp, entrada, salida;
+    desp = modulo(pos - anillo);
+    entrada = modulo(letra + desp);
+    salida = 0;
+    
+    si (numRotor == 1) {
+        si (reverso == 0) { salida = rotorUnoFwd(entrada); } 
+        sino { salida = rotorUnoRev(entrada); }
+    }
+    si (numRotor == 2) {
+        si (reverso == 0) { salida = rotorDosFwd(entrada); } 
+        sino { salida = rotorDosRev(entrada); }
+    }
+    si (numRotor == 3) {
+        si (reverso == 0) { salida = rotorTresFwd(entrada); } 
+        sino { salida = rotorTresRev(entrada); }
+    }
+    
+    retornar modulo(salida - desp);
+}
+
+// --- FLUJO DEL MENSAJE Y CRIB ---
+// PVRGDDYWGVESRMHFDKFHUEPBFIA
+fun obtenerMensaje(entero i) -> entero {
+    depende i {
+        0: retornar 15; 1: retornar 21; 2: retornar 17; 3: retornar 6;
+        4: retornar 3; 5: retornar 3; 6: retornar 24; 7: retornar 22;
+        8: retornar 6; 9: retornar 21; 10: retornar 4; 11: retornar 18;
+        12: retornar 17; 13: retornar 12; 14: retornar 7; 15: retornar 5;
+        16: retornar 3; 17: retornar 10; 18: retornar 5; 19: retornar 7;
+        20: retornar 20; 21: retornar 4; 22: retornar 15; 23: retornar 1;
+        24: retornar 5; 25: retornar 8; 26: retornar 0;
+        otros: retornar 0;
+    }
+}
+
+// Buscar: "HEILXHITLER"
+fun chequearCrib(entero letra, entero estadoActual) -> entero {
+    depende estadoActual {
+        0: si (letra == 7) { retornar 1; } sino { retornar 0; }
+        1: si (letra == 4) { retornar 2; } sino { retornar 0; }
+        2: si (letra == 8) { retornar 3; } sino { retornar 0; }
+        3: si (letra == 11) { retornar 4; } sino { retornar 0; }
+        4: si (letra == 23) { retornar 5; } sino { retornar 0; }
+        5: si (letra == 7) { retornar 6; } sino { retornar 0; }
+        6: si (letra == 8) { retornar 7; } sino { retornar 0; }
+        7: si (letra == 19) { retornar 8; } sino { retornar 0; }
+        8: si (letra == 11) { retornar 9; } sino { retornar 0; }
+        9: si (letra == 4) { retornar 10; } sino { retornar 0; }
+        10: si (letra == 17) { retornar 11; } sino { retornar 0; }
+        otros: retornar 0;
+    }
+}
+
+// =========================================================
+// FUNCIÓN PRINCIPAL DE CRACKEO
+// =========================================================
+
+fun iniciarCrack() -> entero {
+    entero posIzq, posMed, posDer;
+    entero anilloIzq, anilloMed, anilloDer;
+    entero pasoIzq, pasoMed;
+    entero tmp;
+    entero letraCifrada, letraClara;
+    entero estadoCrib;
+    entero longMsg;
+    
+    longMsg = 27;
+    anilloIzq = 0; 
+    anilloMed = 0; 
+    anilloDer = 0;
+
+    para (entero rA = 0; rA < 26; rA = rA + 1) {
+        para (entero rB = 0; rB < 26; rB = rB + 1) {
+            para (entero rC = 0; rC < 26; rC = rC + 1) {
+                
+                posIzq = rA;
+                posMed = rB;
+                posDer = rC;
+                estadoCrib = 0;
+                
+                para (entero idx = 0; idx < longMsg; idx = idx + 1) {
+                    letraCifrada = obtenerMensaje(idx);
+                    
+                    // --- GIRAR ROTORES ---
+                    // Segun config diaria: II (Izq), I (Med, Muesca Q=16), III (Der, Muesca V=21)
+                    pasoIzq = 0;
+                    pasoMed = 0;
+                    
+                    si (posMed == 16) { pasoIzq = 1; }
+                    si (posDer == 21) { pasoMed = 1; }
+
+                    si (pasoMed == 1) {
+                        posMed = modulo(posMed + 1);
+                        posIzq = modulo(posIzq + 1);
+                    } sino {
+                        si (pasoIzq == 1) {
+                            posMed = modulo(posMed + 1);
+                            posIzq = modulo(posIzq + 1);
+                        }
+                    }
+                    posDer = modulo(posDer + 1);
+                    
+                    // --- CIFRAR LETRA ---
+                    tmp = clavijas(letraCifrada);
+                    
+                    // Viaje de ida (Derecha -> Izquierda)
+                    tmp = pasarRotor(tmp, posDer, anilloDer, 3, 0); // Rotor III
+                    tmp = pasarRotor(tmp, posMed, anilloMed, 1, 0); // Rotor I
+                    tmp = pasarRotor(tmp, posIzq, anilloIzq, 2, 0); // Rotor II
+                    
+                    // Reflector
+                    tmp = reflectorB(tmp);
+                    
+                    // Viaje de vuelta (Izquierda -> Derecha)
+                    tmp = pasarRotor(tmp, posIzq, anilloIzq, 2, 1);
+                    tmp = pasarRotor(tmp, posMed, anilloMed, 1, 1);
+                    tmp = pasarRotor(tmp, posDer, anilloDer, 3, 1);
+                    
+                    letraClara = clavijas(tmp);
+                    
+                    // --- VERIFICAR CRIB ---
+                    estadoCrib = chequearCrib(letraClara, estadoCrib);
+                    
+                    si (estadoCrib == 11) {
+                        // Encontramos la configuración correcta
+                        imprimir(rA);
+                        imprimir(rB);
+                        imprimir(rC);
+                        retornar 1;
+                    }
+                }
+            }
+        }
+    }
+    
+    retornar 0;
 }
