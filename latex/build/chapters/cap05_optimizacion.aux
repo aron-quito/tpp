@@ -12,19 +12,23 @@
 \newlabel{tab:const-fold}{{7.1}{44}{Operaciones sujetas a plegado de constantes}{table.7.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.2.3}Implementación}{44}{subsection.7.2.3}\protected@file@percent }
 \@writefile{lol}{\contentsline {lstlisting}{\numberline {7.1}Implementación del plegado de constantes en opt.c}{44}{lstlisting.7.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.1}{\ignorespaces Visualización del Plegado de Constantes. El subárbol de la operación constante (\texttt  {3 + 5}) colapsa en un solo nodo hoja constante (\texttt  {8}).}}{45}{figure.7.1}\protected@file@percent }
+\newlabel{fig:opt_fold}{{7.1}{45}{Visualización del Plegado de Constantes. El subárbol de la operación constante (\texttt {3 + 5}) colapsa en un solo nodo hoja constante (\texttt {8})}{figure.7.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.2.4}Ejemplo}{45}{subsection.7.2.4}\protected@file@percent }
 \@writefile{lol}{\contentsline {lstlisting}{\numberline {7.2}Plegado de constantes en cascada}{45}{lstlisting.7.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7.3}Optimización 2: Simplificación Algebraica}{45}{section.7.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.3.1}Descripción}{45}{subsection.7.3.1}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {7.2}{\ignorespaces Identidades algebraicas aplicadas}}{45}{table.7.2}\protected@file@percent }
 \newlabel{tab:algebraic}{{7.2}{45}{Identidades algebraicas aplicadas}{table.7.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7.4}Optimización 3: Eliminación de Código Muerto}{45}{section.7.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.1}Descripción}{45}{subsection.7.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.2}{\ignorespaces Visualización de la Simplificación Algebraica. La operación de suma con el elemento neutro $0$ (\texttt  {x + 0}) se elimina, promoviendo el nodo de la variable (\texttt  {x}) para reemplazar a su padre.}}{46}{figure.7.2}\protected@file@percent }
+\newlabel{fig:opt_algebraic}{{7.2}{46}{Visualización de la Simplificación Algebraica. La operación de suma con el elemento neutro $0$ (\texttt {x + 0}) se elimina, promoviendo el nodo de la variable (\texttt {x}) para reemplazar a su padre}{figure.7.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.4}Optimización 3: Eliminación de Código Muerto}{46}{section.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.1}Descripción}{46}{subsection.7.4.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {7.4.2}Casos detectados}{46}{subsection.7.4.2}\protected@file@percent }
 \@writefile{lol}{\contentsline {lstlisting}{\numberline {7.3}Casos de código muerto eliminados}{46}{lstlisting.7.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7.5}Optimización 4: Propagación de Constantes}{46}{section.7.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.5.1}Descripción}{46}{subsection.7.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7.6}Informe de Optimizaciones}{46}{section.7.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5.1}Descripción}{47}{subsection.7.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.6}Informe de Optimizaciones}{47}{section.7.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {7.7}Posibilidades de Optimización en el Código Final}{47}{section.7.7}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {7.3}{\ignorespaces Impacto de las optimizaciones en el código generado}}{47}{table.7.3}\protected@file@percent }
 \newlabel{tab:opt-impact}{{7.3}{47}{Impacto de las optimizaciones en el código generado}{table.7.3}{}}
@@ -44,7 +48,7 @@
 \setcounter{subsubsection}{0}
 \setcounter{paragraph}{0}
 \setcounter{subparagraph}{0}
-\setcounter{figure}{0}
+\setcounter{figure}{2}
 \setcounter{table}{3}
 \setcounter{lstnumber}{18}
 \setcounter{section@level}{0}

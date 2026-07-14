@@ -19,20 +19,22 @@ TPP es un compilador educativo escrito completamente en C utilizando las herrami
 
 ### 1. Construir el Compilador
 
-Asegúrate de tener instalados `flex`, `bison`, `gcc` y `make`. En la raíz del repositorio, ejecuta:
+El repositorio incluye un script en Python (`compile_to_logisim.py`) que usa el ensamblador nativo para traducir las instrucciones a los archivos `.hex` listos para ser cargados.
+
+Asegúrate de tener instalados `flex`, `bison`, `gcc` y `make`. En la raíz del repositorio, ademas debes tener instalado Python 3 y el cross-compiler GNU para RISC-V (`riscv64-unknown-elf-gcc`). Luego, ejecuta:
 
 ```bash
-make
+python3 compile_to_logisim.py
 ```
 
-Esto generará el ejecutable `./tpp`.
+Esto generará el ejecutable `./compilador` y los archivos `rom.hex` y `ram.hex`.
 
 ### 2. Compilar un programa fuente (`.to`)
 
 Para compilar un código de prueba, pásalo como argumento al compilador:
 
 ```bash
-./tpp test/prueba01.to
+./compilador test/prueba01.to
 ```
 
 Si el programa es correcto, el compilador generará la tabla de símbolos y el archivo ensamblador resultante (`output.s`).
@@ -47,15 +49,7 @@ Para poder ejecutar tu código compilado en el procesador virtual RISC-V constru
 
 ### 1. Generar la imagen Hexadecimal (`.hex`)
 
-El repositorio incluye un script en Python (`compile_to_logisim.py`) que usa el ensamblador nativo para traducir las instrucciones a los archivos `.hex` listos para ser cargados.
-
-Asegúrate de tener instalado Python 3 y el cross-compiler GNU para RISC-V (`riscv64-unknown-elf-gcc`). Luego, ejecuta:
-
-```bash
-python3 compile_to_logisim.py
-```
-
-El script leerá `output.s` y generará dos archivos:
+El script `compile_to_logism.py` lee `output.s` y genera dos archivos:
 *   `rom.hex`: Contiene el segmento de código (Instrucciones).
 *   `ram.hex`: Contiene el segmento de datos (Variables).
 

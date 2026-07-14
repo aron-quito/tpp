@@ -21,12 +21,12 @@
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {9.1}{\ignorespaces Registros utilizados por el compilador TPP en RV32I}}{53}{table.9.1}%
 \contentsline {table}{\numberline {9.2}{\ignorespaces Rutinas de soporte generadas automáticamente}}{56}{table.9.2}%
-\contentsline {table}{\numberline {9.3}{\ignorespaces Mapeo de construcciones TPP a instrucciones RV32I}}{61}{table.9.3}%
+\contentsline {table}{\numberline {9.3}{Mapeo de construcciones TPP a instrucciones RV32I}}{60}{table.9.3}%
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {10.1}{\ignorespaces Codificación de \texttt {addi sp, sp, -32} en RV32I formato I}}{65}{table.10.1}%
-\addvspace {10\p@ }
-\addvspace {10\p@ }
+\contentsline {table}{\numberline {10.1}{\ignorespaces Codificación de \texttt {addi sp, sp, -32} en RV32I formato I}}{66}{table.10.1}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {table}{\numberline {14.1}{\ignorespaces Resumen del pipeline completo}}{88}{table.14.1}%
-\contentsline {table}{\numberline {14.2}{\ignorespaces Estado de las características del compilador}}{90}{table.14.2}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {14.1}{\ignorespaces Resumen del pipeline completo}}{89}{table.14.1}%
+\contentsline {table}{\numberline {14.2}{\ignorespaces Estado de las características del compilador}}{91}{table.14.2}%

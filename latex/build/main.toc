@@ -68,12 +68,12 @@
 \contentsline {subsection}{\numberline {7.2.4}Ejemplo}{45}{subsection.7.2.4}%
 \contentsline {section}{\numberline {7.3}Optimización 2: Simplificación Algebraica}{45}{section.7.3}%
 \contentsline {subsection}{\numberline {7.3.1}Descripción}{45}{subsection.7.3.1}%
-\contentsline {section}{\numberline {7.4}Optimización 3: Eliminación de Código Muerto}{45}{section.7.4}%
-\contentsline {subsection}{\numberline {7.4.1}Descripción}{45}{subsection.7.4.1}%
+\contentsline {section}{\numberline {7.4}Optimización 3: Eliminación de Código Muerto}{46}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}Descripción}{46}{subsection.7.4.1}%
 \contentsline {subsection}{\numberline {7.4.2}Casos detectados}{46}{subsection.7.4.2}%
 \contentsline {section}{\numberline {7.5}Optimización 4: Propagación de Constantes}{46}{section.7.5}%
-\contentsline {subsection}{\numberline {7.5.1}Descripción}{46}{subsection.7.5.1}%
-\contentsline {section}{\numberline {7.6}Informe de Optimizaciones}{46}{section.7.6}%
+\contentsline {subsection}{\numberline {7.5.1}Descripción}{47}{subsection.7.5.1}%
+\contentsline {section}{\numberline {7.6}Informe de Optimizaciones}{47}{section.7.6}%
 \contentsline {section}{\numberline {7.7}Posibilidades de Optimización en el Código Final}{47}{section.7.7}%
 \contentsline {chapter}{\numberline {8}BACKEND — Código Intermedio (TAC)}{48}{chapter.8}%
 \contentsline {section}{\numberline {8.1}Fundamentos Teóricos}{48}{section.8.1}%
@@ -98,88 +98,88 @@
 \contentsline {subsection}{\numberline {9.5.2}Estructuras de Control}{58}{subsection.9.5.2}%
 \contentsline {subsection}{\numberline {9.5.3}Funciones: Prólogo, Llamada y Epílogo}{58}{subsection.9.5.3}%
 \contentsline {subsection}{\numberline {9.5.4}Instrucción imprimir}{59}{subsection.9.5.4}%
-\contentsline {section}{\numberline {9.6}Tabla de Posibilidades del Código Generado}{61}{section.9.6}%
+\contentsline {section}{\numberline {9.6}Tabla de Posibilidades del Código Generado}{60}{section.9.6}%
 \contentsline {section}{\numberline {9.7}Salida de Diagnóstico}{62}{section.9.7}%
-\contentsline {chapter}{\numberline {10}METODOLOGÍA — Integración con Logisim Evolution}{63}{chapter.10}%
-\contentsline {section}{\numberline {10.1}Visión General del Proceso}{63}{section.10.1}%
-\contentsline {section}{\numberline {10.2}El Script \texttt {compile\_to\_logisim.py}}{64}{section.10.2}%
-\contentsline {subsection}{\numberline {10.2.1}Origen y Adaptación}{64}{subsection.10.2.1}%
-\contentsline {subsection}{\numberline {10.2.2}Funcionamiento Interno}{64}{subsection.10.2.2}%
-\contentsline {subsection}{\numberline {10.2.3}Codificación de Ejemplo}{65}{subsection.10.2.3}%
-\contentsline {section}{\numberline {10.3}Arquitectura RISC-V y el Procesador Logisim}{65}{section.10.3}%
-\contentsline {subsection}{\numberline {10.3.1}El Procesador de Ciclo Único}{65}{subsection.10.3.1}%
-\contentsline {subsection}{\numberline {10.3.2}Ciclo de Ejecución por Instrucción}{66}{subsection.10.3.2}%
-\contentsline {chapter}{\numberline {11}COMPLICACIONES}{67}{chapter.11}%
-\contentsline {section}{\numberline {11.1}Panorama General de Dificultades}{67}{section.11.1}%
-\contentsline {section}{\numberline {11.2}Complicación 1: Ausencia de Instrucción \texttt {mul} en RV32I Base}{67}{section.11.2}%
-\contentsline {subsection}{\numberline {11.2.1}Descripción}{67}{subsection.11.2.1}%
-\contentsline {subsection}{\numberline {11.2.2}Solución Adoptada}{67}{subsection.11.2.2}%
-\contentsline {section}{\numberline {11.3}Complicación 2: Salida TTY en Logisim}{68}{section.11.3}%
-\contentsline {subsection}{\numberline {11.3.1}Descripción}{68}{subsection.11.3.1}%
-\contentsline {subsection}{\numberline {11.3.2}Problema de Codificación}{68}{subsection.11.3.2}%
-\contentsline {subsection}{\numberline {11.3.3}Solución}{68}{subsection.11.3.3}%
-\contentsline {section}{\numberline {11.4}Complicación 3: Modelo de Memoria Estático y Funciones Recursivas}{68}{section.11.4}%
-\contentsline {subsection}{\numberline {11.4.1}Descripción}{69}{subsection.11.4.1}%
-\contentsline {subsection}{\numberline {11.4.2}Manifestación del Error}{69}{subsection.11.4.2}%
-\contentsline {subsection}{\numberline {11.4.3}Causa Técnica}{69}{subsection.11.4.3}%
-\contentsline {subsection}{\numberline {11.4.4}Solución Actual}{69}{subsection.11.4.4}%
-\contentsline {section}{\numberline {11.5}Complicación 4: Formato del Archivo Hexadecimal para Logisim}{69}{section.11.5}%
-\contentsline {subsection}{\numberline {11.5.1}Descripción}{69}{subsection.11.5.1}%
-\contentsline {subsection}{\numberline {11.5.2}Problema Inicial}{70}{subsection.11.5.2}%
-\contentsline {subsection}{\numberline {11.5.3}Solución}{70}{subsection.11.5.3}%
-\contentsline {section}{\numberline {11.6}Complicación 5: Conflictos Léxicos con Babel en LaTeX}{70}{section.11.6}%
-\contentsline {subsection}{\numberline {11.6.1}Descripción}{70}{subsection.11.6.1}%
-\contentsline {subsection}{\numberline {11.6.2}Solución}{70}{subsection.11.6.2}%
-\contentsline {section}{\numberline {11.7}Complicación 6: Caracteres Especiales en Cadenas de Texto}{70}{section.11.7}%
-\contentsline {subsection}{\numberline {11.7.1}Descripción}{70}{subsection.11.7.1}%
-\contentsline {subsection}{\numberline {11.7.2}Solución}{71}{subsection.11.7.2}%
-\contentsline {chapter}{\numberline {12}PRUEBAS Y DEMOSTRACIONES DEL COMPILADOR}{72}{chapter.12}%
-\contentsline {section}{\numberline {12.1}Descripción de las Pruebas}{72}{section.12.1}%
-\contentsline {section}{\numberline {12.2}Prueba 1: Programa Correcto — Operaciones Básicas}{72}{section.12.2}%
-\contentsline {subsection}{\numberline {12.2.1}Código Fuente}{72}{subsection.12.2.1}%
-\contentsline {subsection}{\numberline {12.2.2}Salida Esperada del Compilador}{72}{subsection.12.2.2}%
-\contentsline {section}{\numberline {12.3}Prueba 2: Error Léxico}{75}{section.12.3}%
-\contentsline {subsection}{\numberline {12.3.1}Código Fuente con Error}{75}{subsection.12.3.1}%
-\contentsline {subsection}{\numberline {12.3.2}Salida del Compilador}{75}{subsection.12.3.2}%
-\contentsline {section}{\numberline {12.4}Prueba 3: Error Sintáctico}{76}{section.12.4}%
-\contentsline {subsection}{\numberline {12.4.1}Código Fuente con Error}{76}{subsection.12.4.1}%
-\contentsline {subsection}{\numberline {12.4.2}Salida del Compilador}{76}{subsection.12.4.2}%
-\contentsline {section}{\numberline {12.5}Prueba 4: Error Semántico}{77}{section.12.5}%
-\contentsline {subsection}{\numberline {12.5.1}Código Fuente con Error}{77}{subsection.12.5.1}%
-\contentsline {subsection}{\numberline {12.5.2}Salida del Compilador}{77}{subsection.12.5.2}%
-\contentsline {section}{\numberline {12.6}Prueba 5: Programa con Funciones}{78}{section.12.6}%
-\contentsline {subsection}{\numberline {12.6.1}Código Fuente}{78}{subsection.12.6.1}%
-\contentsline {subsection}{\numberline {12.6.2}Salida Esperada}{78}{subsection.12.6.2}%
-\contentsline {section}{\numberline {12.7}Prueba 6: Optimización de Constantes}{78}{section.12.7}%
-\contentsline {subsection}{\numberline {12.7.1}Código Fuente}{79}{subsection.12.7.1}%
-\contentsline {subsection}{\numberline {12.7.2}Salida del Optimizador}{79}{subsection.12.7.2}%
-\contentsline {section}{\numberline {12.8}Prueba 7: Programa con Bucles y Arreglos}{80}{section.12.8}%
-\contentsline {subsection}{\numberline {12.8.1}Código Fuente}{80}{subsection.12.8.1}%
-\contentsline {subsection}{\numberline {12.8.2}Salida Esperada}{80}{subsection.12.8.2}%
-\contentsline {section}{\numberline {12.9}Prueba 8: Prueba Integral — Backend}{80}{section.12.9}%
-\contentsline {subsection}{\numberline {12.9.1}Código Fuente}{80}{subsection.12.9.1}%
-\contentsline {subsection}{\numberline {12.9.2}Resultado en Logisim}{81}{subsection.12.9.2}%
-\contentsline {chapter}{\numberline {13}MANUAL DE USUARIO}{83}{chapter.13}%
-\contentsline {section}{\numberline {13.1}Sintaxis del Lenguaje TPP}{83}{section.13.1}%
-\contentsline {subsection}{\numberline {13.1.1}Tipos de Datos y Variables}{83}{subsection.13.1.1}%
-\contentsline {subsection}{\numberline {13.1.2}Entrada y Salida}{83}{subsection.13.1.2}%
-\contentsline {subsection}{\numberline {13.1.3}Expresiones y Operadores}{84}{subsection.13.1.3}%
-\contentsline {subsection}{\numberline {13.1.4}Estructuras Condicionales: \texttt {si} / \texttt {sino}}{84}{subsection.13.1.4}%
-\contentsline {subsection}{\numberline {13.1.5}Selección Múltiple: \texttt {depende} / \texttt {caso}}{84}{subsection.13.1.5}%
-\contentsline {subsection}{\numberline {13.1.6}Bucles: \texttt {mientras} y \texttt {para}}{85}{subsection.13.1.6}%
-\contentsline {subsection}{\numberline {13.1.7}Funciones: \texttt {fun}}{86}{subsection.13.1.7}%
-\contentsline {section}{\numberline {13.2}Guía de Compilación y Ejecución en Logisim}{86}{section.13.2}%
-\contentsline {subsection}{\numberline {13.2.1}1. Compilación del código fuente}{86}{subsection.13.2.1}%
-\contentsline {subsection}{\numberline {13.2.2}2. Generación del Código Hexadecimal}{87}{subsection.13.2.2}%
-\contentsline {subsection}{\numberline {13.2.3}3. Carga en Logisim Evolution}{87}{subsection.13.2.3}%
-\contentsline {chapter}{\numberline {14}Conclusiones y Trabajo Futuro}{88}{chapter.14}%
-\contentsline {section}{\numberline {14.1}Resumen del Proceso de Compilación}{88}{section.14.1}%
-\contentsline {section}{\numberline {14.2}Logros Implementados}{88}{section.14.2}%
-\contentsline {subsection}{\numberline {14.2.1}Frontend}{88}{subsection.14.2.1}%
-\contentsline {subsection}{\numberline {14.2.2}Backend}{89}{subsection.14.2.2}%
-\contentsline {section}{\numberline {14.3}Construcciones Soportadas}{90}{section.14.3}%
-\contentsline {section}{\numberline {14.4}Limitaciones Actuales}{90}{section.14.4}%
-\contentsline {subsection}{\numberline {14.4.1}Modelo de Memoria Estático}{90}{subsection.14.4.1}%
-\contentsline {subsection}{\numberline {14.4.2}Sin guión bajo en identificadores}{91}{subsection.14.4.2}%
-\contentsline {section}{\numberline {14.5}Trabajo Futuro}{91}{section.14.5}%
-\contentsline {section}{\numberline {14.6}Ejemplo Completo: De Fuente a Binario}{91}{section.14.6}%
+\contentsline {chapter}{\numberline {10}METODOLOGÍA — Integración con Logisim Evolution}{64}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Visión General del Proceso}{64}{section.10.1}%
+\contentsline {section}{\numberline {10.2}El Script \texttt {compile\_to\_logisim.py}}{65}{section.10.2}%
+\contentsline {subsection}{\numberline {10.2.1}Origen y Adaptación}{65}{subsection.10.2.1}%
+\contentsline {subsection}{\numberline {10.2.2}Funcionamiento Interno}{65}{subsection.10.2.2}%
+\contentsline {subsection}{\numberline {10.2.3}Codificación de Ejemplo}{66}{subsection.10.2.3}%
+\contentsline {section}{\numberline {10.3}Arquitectura RISC-V y el Procesador Logisim}{66}{section.10.3}%
+\contentsline {subsection}{\numberline {10.3.1}El Procesador de Ciclo Único}{66}{subsection.10.3.1}%
+\contentsline {subsection}{\numberline {10.3.2}Ciclo de Ejecución por Instrucción}{67}{subsection.10.3.2}%
+\contentsline {chapter}{\numberline {11}COMPLICACIONES}{68}{chapter.11}%
+\contentsline {section}{\numberline {11.1}Panorama General de Dificultades}{68}{section.11.1}%
+\contentsline {section}{\numberline {11.2}Complicación 1: Ausencia de Instrucción \texttt {mul} en RV32I Base}{68}{section.11.2}%
+\contentsline {subsection}{\numberline {11.2.1}Descripción}{68}{subsection.11.2.1}%
+\contentsline {subsection}{\numberline {11.2.2}Solución Adoptada}{68}{subsection.11.2.2}%
+\contentsline {section}{\numberline {11.3}Complicación 2: Salida TTY en Logisim}{69}{section.11.3}%
+\contentsline {subsection}{\numberline {11.3.1}Descripción}{69}{subsection.11.3.1}%
+\contentsline {subsection}{\numberline {11.3.2}Problema de Codificación}{69}{subsection.11.3.2}%
+\contentsline {subsection}{\numberline {11.3.3}Solución}{69}{subsection.11.3.3}%
+\contentsline {section}{\numberline {11.4}Complicación 3: Modelo de Memoria Estático y Funciones Recursivas}{69}{section.11.4}%
+\contentsline {subsection}{\numberline {11.4.1}Descripción}{70}{subsection.11.4.1}%
+\contentsline {subsection}{\numberline {11.4.2}Manifestación del Error}{70}{subsection.11.4.2}%
+\contentsline {subsection}{\numberline {11.4.3}Causa Técnica}{70}{subsection.11.4.3}%
+\contentsline {subsection}{\numberline {11.4.4}Solución Actual}{70}{subsection.11.4.4}%
+\contentsline {section}{\numberline {11.5}Complicación 4: Formato del Archivo Hexadecimal para Logisim}{70}{section.11.5}%
+\contentsline {subsection}{\numberline {11.5.1}Descripción}{70}{subsection.11.5.1}%
+\contentsline {subsection}{\numberline {11.5.2}Problema Inicial}{71}{subsection.11.5.2}%
+\contentsline {subsection}{\numberline {11.5.3}Solución}{71}{subsection.11.5.3}%
+\contentsline {section}{\numberline {11.6}Complicación 5: Conflictos Léxicos con Babel en LaTeX}{71}{section.11.6}%
+\contentsline {subsection}{\numberline {11.6.1}Descripción}{71}{subsection.11.6.1}%
+\contentsline {subsection}{\numberline {11.6.2}Solución}{71}{subsection.11.6.2}%
+\contentsline {section}{\numberline {11.7}Complicación 6: Caracteres Especiales en Cadenas de Texto}{71}{section.11.7}%
+\contentsline {subsection}{\numberline {11.7.1}Descripción}{71}{subsection.11.7.1}%
+\contentsline {subsection}{\numberline {11.7.2}Solución}{72}{subsection.11.7.2}%
+\contentsline {chapter}{\numberline {12}PRUEBAS Y DEMOSTRACIONES DEL COMPILADOR}{73}{chapter.12}%
+\contentsline {section}{\numberline {12.1}Descripción de las Pruebas}{73}{section.12.1}%
+\contentsline {section}{\numberline {12.2}Prueba 1: Programa Correcto — Operaciones Básicas}{73}{section.12.2}%
+\contentsline {subsection}{\numberline {12.2.1}Código Fuente}{73}{subsection.12.2.1}%
+\contentsline {subsection}{\numberline {12.2.2}Salida Esperada del Compilador}{73}{subsection.12.2.2}%
+\contentsline {section}{\numberline {12.3}Prueba 2: Error Léxico}{76}{section.12.3}%
+\contentsline {subsection}{\numberline {12.3.1}Código Fuente con Error}{76}{subsection.12.3.1}%
+\contentsline {subsection}{\numberline {12.3.2}Salida del Compilador}{76}{subsection.12.3.2}%
+\contentsline {section}{\numberline {12.4}Prueba 3: Error Sintáctico}{77}{section.12.4}%
+\contentsline {subsection}{\numberline {12.4.1}Código Fuente con Error}{77}{subsection.12.4.1}%
+\contentsline {subsection}{\numberline {12.4.2}Salida del Compilador}{77}{subsection.12.4.2}%
+\contentsline {section}{\numberline {12.5}Prueba 4: Error Semántico}{78}{section.12.5}%
+\contentsline {subsection}{\numberline {12.5.1}Código Fuente con Error}{78}{subsection.12.5.1}%
+\contentsline {subsection}{\numberline {12.5.2}Salida del Compilador}{78}{subsection.12.5.2}%
+\contentsline {section}{\numberline {12.6}Prueba 5: Programa con Funciones}{79}{section.12.6}%
+\contentsline {subsection}{\numberline {12.6.1}Código Fuente}{79}{subsection.12.6.1}%
+\contentsline {subsection}{\numberline {12.6.2}Salida Esperada}{79}{subsection.12.6.2}%
+\contentsline {section}{\numberline {12.7}Prueba 6: Optimización de Constantes}{79}{section.12.7}%
+\contentsline {subsection}{\numberline {12.7.1}Código Fuente}{80}{subsection.12.7.1}%
+\contentsline {subsection}{\numberline {12.7.2}Salida del Optimizador}{80}{subsection.12.7.2}%
+\contentsline {section}{\numberline {12.8}Prueba 7: Programa con Bucles y Arreglos}{81}{section.12.8}%
+\contentsline {subsection}{\numberline {12.8.1}Código Fuente}{81}{subsection.12.8.1}%
+\contentsline {subsection}{\numberline {12.8.2}Salida Esperada}{81}{subsection.12.8.2}%
+\contentsline {section}{\numberline {12.9}Prueba 8: Prueba Integral — Backend}{81}{section.12.9}%
+\contentsline {subsection}{\numberline {12.9.1}Código Fuente}{81}{subsection.12.9.1}%
+\contentsline {subsection}{\numberline {12.9.2}Resultado en Logisim}{82}{subsection.12.9.2}%
+\contentsline {chapter}{\numberline {13}MANUAL DE USUARIO}{84}{chapter.13}%
+\contentsline {section}{\numberline {13.1}Sintaxis del Lenguaje TPP}{84}{section.13.1}%
+\contentsline {subsection}{\numberline {13.1.1}Tipos de Datos y Variables}{84}{subsection.13.1.1}%
+\contentsline {subsection}{\numberline {13.1.2}Entrada y Salida}{84}{subsection.13.1.2}%
+\contentsline {subsection}{\numberline {13.1.3}Expresiones y Operadores}{85}{subsection.13.1.3}%
+\contentsline {subsection}{\numberline {13.1.4}Estructuras Condicionales: \texttt {si} / \texttt {sino}}{85}{subsection.13.1.4}%
+\contentsline {subsection}{\numberline {13.1.5}Selección Múltiple: \texttt {depende} / \texttt {caso}}{85}{subsection.13.1.5}%
+\contentsline {subsection}{\numberline {13.1.6}Bucles: \texttt {mientras} y \texttt {para}}{86}{subsection.13.1.6}%
+\contentsline {subsection}{\numberline {13.1.7}Funciones: \texttt {fun}}{87}{subsection.13.1.7}%
+\contentsline {section}{\numberline {13.2}Guía de Compilación y Ejecución en Logisim}{87}{section.13.2}%
+\contentsline {subsection}{\numberline {13.2.1}1. Compilación del código fuente}{87}{subsection.13.2.1}%
+\contentsline {subsection}{\numberline {13.2.2}2. Generación del Código Hexadecimal}{88}{subsection.13.2.2}%
+\contentsline {subsection}{\numberline {13.2.3}3. Carga en Logisim Evolution}{88}{subsection.13.2.3}%
+\contentsline {chapter}{\numberline {14}Conclusiones y Trabajo Futuro}{89}{chapter.14}%
+\contentsline {section}{\numberline {14.1}Resumen del Proceso de Compilación}{89}{section.14.1}%
+\contentsline {section}{\numberline {14.2}Logros Implementados}{89}{section.14.2}%
+\contentsline {subsection}{\numberline {14.2.1}Frontend}{89}{subsection.14.2.1}%
+\contentsline {subsection}{\numberline {14.2.2}Backend}{90}{subsection.14.2.2}%
+\contentsline {section}{\numberline {14.3}Construcciones Soportadas}{91}{section.14.3}%
+\contentsline {section}{\numberline {14.4}Limitaciones Actuales}{91}{section.14.4}%
+\contentsline {subsection}{\numberline {14.4.1}Modelo de Memoria Estático}{91}{subsection.14.4.1}%
+\contentsline {subsection}{\numberline {14.4.2}Sin guión bajo en identificadores}{92}{subsection.14.4.2}%
+\contentsline {section}{\numberline {14.5}Trabajo Futuro}{92}{section.14.5}%
+\contentsline {section}{\numberline {14.6}Ejemplo Completo: De Fuente a Binario}{92}{section.14.6}%
