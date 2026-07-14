@@ -8,11 +8,23 @@ Simbolo *tabla = NULL;
 
 extern int errores_semanticos;  // Contador global de errores semánticos
 
+/* FUNCIÓN AUXILIAR: Busca un símbolo ÚNICAMENTE en el ámbito exacto especificado */
+Simbolo* buscar_simbolo_estricto(const char *nombre, int alcance) {
+    Simbolo *actual = tabla;
+    while (actual != NULL) {
+        if (strcmp(actual->nombre, nombre) == 0 && actual->alcance == alcance) {
+            return actual;
+        }
+        actual = actual->sig;
+    }
+    return NULL;
+}
+
 /* Función para insertar una variable o función en la tabla */
 void insertar_simbolo(char *nombre, TipoDato tipo, int es_funcion, int alcance) {
-    // Verificamos si ya existe en el MISMO alcance exacto (error de doble declaración)    
-    Simbolo *existente = buscar_simbolo_con_ambito(nombre, alcance);    
-    if (existente && existente->alcance == alcance) {
+    // Verificamos si ya existe en el MISMO alcance exacto usando la búsqueda estricta
+    Simbolo *existente = buscar_simbolo_estricto(nombre, alcance);    
+    if (existente != NULL) {
         fprintf(stderr, "Error Semantico: La variable o funcion '%s' ya fue declarada en este ambito.\n", nombre);
         errores_semanticos++;
         return;
@@ -20,6 +32,10 @@ void insertar_simbolo(char *nombre, TipoDato tipo, int es_funcion, int alcance) 
 
     // Creamos el nuevo símbolo en memoria
     Simbolo *nuevo = (Simbolo*)malloc(sizeof(Simbolo));
+    if (!nuevo) {
+        fprintf(stderr, "Fatal: No hay memoria suficiente para la tabla de símbolos.\n");
+        exit(1);
+    }
     nuevo->nombre = strdup(nombre);
     nuevo->tipo = tipo;
     nuevo->es_funcion = es_funcion;
