@@ -149,7 +149,7 @@ Para llevar un programa fuente \texttt{.to} hasta el procesador simulado en Logi
 Ejecute el compilador pasándole el archivo \texttt{.to}. Si es exitoso, generará el archivo ensamblador \texttt{output.s}.
 
 \begin{lstlisting}[language=bash, style=cstyle]
-$ ./tpp programa.to
+$ ./compilador programa.to
 \end{lstlisting}
 Si hay errores léxicos, sintácticos o semánticos, el compilador los reportará en la consola y abortará el proceso.
 
@@ -158,7 +158,7 @@ Si hay errores léxicos, sintácticos o semánticos, el compilador los reportar�
 El ensamblador de Logisim requiere que las instrucciones estén en formato hexadecimal (\texttt{v2.0 raw}). Se utiliza el script de Python incluido en el repositorio:
 
 \begin{lstlisting}[language=bash, style=cstyle]
-$ python3 compile_to_logisim.py
+$ python3 compile_to_logisim.py programa.to
 \end{lstlisting}
 
 El script leerá \texttt{output.s} y generará archivos hexadecimales (por defecto produce \texttt{output.hex}, o \texttt{rom.hex} y \texttt{ram.hex} si la arquitectura del circuito separa las memorias de instrucciones y datos).
